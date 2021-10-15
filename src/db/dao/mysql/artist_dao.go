@@ -4,7 +4,7 @@ import (
 	"database/sql"
 
 	"citadel_intranet/src/db/dao"
-	"citadel_intranet/src/db/models"
+	"citadel_intranet/src/db/model"
 
 	"github.com/sirupsen/logrus"
 )
@@ -22,8 +22,8 @@ func NewArtistDao(db *sql.DB) dao.ArtistDao {
 func (this artistDao) Close() {
 }
 
-func (this artistDao) Load(id uint64) *models.Artist {
-    var artist *models.Artist = &models.Artist{}
+func (this artistDao) Load(id uint64) *model.Artist {
+    var artist *model.Artist = &model.Artist{}
 
     row := this.db.QueryRow(`
         SELECT
@@ -42,8 +42,8 @@ func (this artistDao) Load(id uint64) *models.Artist {
     return artist
 }
 
-func (this artistDao) LoadAll() []models.Artist {
-    var ret []models.Artist
+func (this artistDao) LoadAll() []model.Artist {
+    var ret []model.Artist
 
     rows, err := this.db.Query(`
         SELECT
@@ -57,7 +57,7 @@ func (this artistDao) LoadAll() []models.Artist {
     }
 
     for rows.Next() {
-        var artist models.Artist
+        var artist model.Artist
         err := rows.Scan(&artist.Id, &artist.Name)
 
         if err != nil {
@@ -70,7 +70,7 @@ func (this artistDao) LoadAll() []models.Artist {
     return ret
 }
 
-func (this artistDao) Delete(artist models.Artist) (int64, error) {
+func (this artistDao) Delete(artist model.Artist) (int64, error) {
     result, err := this.db.Exec(`
         DELETE
         FROM artist
@@ -83,7 +83,7 @@ func (this artistDao) Delete(artist models.Artist) (int64, error) {
     return result.RowsAffected()
 }
 
-func (this artistDao) Save(artist models.Artist) (int64, error) {
+func (this artistDao) Save(artist model.Artist) (int64, error) {
     result, err := this.db.Exec(`
         INSERT INTO artist(
             id,

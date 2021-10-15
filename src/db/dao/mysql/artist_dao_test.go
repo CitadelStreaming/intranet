@@ -5,7 +5,7 @@ import (
     "testing"
 
     "citadel_intranet/src/db/dao/mysql"
-    "citadel_intranet/src/db/models"
+    "citadel_intranet/src/db/model"
 
     sqlmock "github.com/DATA-DOG/go-sqlmock"
     "github.com/stretchr/testify/assert"
@@ -19,7 +19,7 @@ func TestArtistDao(t *testing.T) {
 
     defer db.Close()
 
-    artist := models.Artist{
+    artist := model.Artist{
         Name: "James",
     }
 
@@ -98,7 +98,7 @@ func TestArtistDaoDeleteError(t *testing.T) {
 
     defer db.Close()
 
-    artist := models.Artist{
+    artist := model.Artist{
         Id: 42,
         Name: "Bobby",
     }
@@ -126,7 +126,7 @@ func TestArtistDaoSaveError(t *testing.T) {
 
     defer db.Close()
 
-    artist := models.Artist{
+    artist := model.Artist{
         Id: 42,
         Name: "Bobby",
     }

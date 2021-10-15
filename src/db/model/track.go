@@ -1,4 +1,4 @@
-package models
+package model
 
 type Track struct {
 	Id uint64

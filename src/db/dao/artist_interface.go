@@ -1,14 +1,14 @@
 package dao
 
 import (
-    "citadel_intranet/src/db/models"
+    "citadel_intranet/src/db/model"
 )
 
 type ArtistDao interface {
     BaseDao
 
-    LoadAll() []models.Artist
-    Load(uint64) *models.Artist
-    Save(models.Artist) (int64, error)
-    Delete(models.Artist) (int64, error)
+    LoadAll() []model.Artist
+    Load(uint64) *model.Artist
+    Save(model.Artist) (int64, error)
+    Delete(model.Artist) (int64, error)
 }

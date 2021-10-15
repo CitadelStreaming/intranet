@@ -1,14 +1,14 @@
 package dao
 
 import (
-    "citadel_intranet/src/db/models"
+    "citadel_intranet/src/db/model"
 )
 
 type TrackDao interface {
     BaseDao
 
-    LoadAll() []models.Track
-    Load(uint64) *models.Track
-    Save(models.Track) (int64, error)
-    Delete(models.Track) (int64, error)
+    LoadAll() []model.Track
+    Load(uint64) *model.Track
+    Save(model.Track) (int64, error)
+    Delete(model.Track) (int64, error)
 }
