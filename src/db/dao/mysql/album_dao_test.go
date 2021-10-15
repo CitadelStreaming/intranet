@@ -150,7 +150,9 @@ func TestAlbumDaoDeleteError(t *testing.T) {
         DELETE
         FROM album
         WHERE id = \?
-    `).WithArgs(album.Id).WillReturnError(errors.New("That's not a real user"))
+    `).
+        WithArgs(album.Id).
+        WillReturnError(errors.New("That's not a real album"))
 
     dao := mysql.NewAlbumDao(db, nil, nil)
     defer dao.Close()
@@ -194,7 +196,9 @@ func TestAlbumDaoSaveError(t *testing.T) {
             artist = VALUES\(artist\),
             published = VALUES\(published\),
             rating = VALUES\(rating\)
-    `).WithArgs(album.Id, album.Title, album.Artist.Id, album.Published, album.Rating).WillReturnError(errors.New("Album save died"))
+    `).
+        WithArgs(album.Id, album.Title, album.Artist.Id, album.Published, album.Rating).
+        WillReturnError(errors.New("Album save died"))
 
     dao := mysql.NewAlbumDao(db, nil, nil)
     defer dao.Close()
@@ -238,12 +242,16 @@ func TestAlbumDao(t *testing.T) {
             artist = VALUES\(artist\),
             published = VALUES\(published\),
             rating = VALUES\(rating\)
-    `).WithArgs(album.Id, album.Title, album.Artist.Id, album.Published, album.Rating).WillReturnResult(sqlmock.NewResult(42, 1))
+    `).
+        WithArgs(album.Id, album.Title, album.Artist.Id, album.Published, album.Rating).
+        WillReturnResult(sqlmock.NewResult(42, 1))
     mock.ExpectExec(`
         DELETE
         FROM album
         WHERE id = \?
-    `).WithArgs(album.Id).WillReturnResult(sqlmock.NewResult(0, 1))
+    `).
+        WithArgs(album.Id).
+        WillReturnResult(sqlmock.NewResult(0, 1))
 
     dao := mysql.NewAlbumDao(db, nil, nil)
     defer dao.Close()
@@ -271,7 +279,8 @@ func TestAlbumDaoLoadAllError(t *testing.T) {
         SELECT
             \*
         FROM album
-    `).WillReturnError(errors.New("Something bad happened"))
+    `).
+        WillReturnError(errors.New("Something bad happened"))
 
     dao := mysql.NewAlbumDao(db, nil, nil)
     defer dao.Close()
@@ -303,7 +312,8 @@ func TestAlbumDaoLoadAll(t *testing.T) {
         SELECT
             \*
         FROM album
-    `).WillReturnRows(mockRows)
+    `).
+        WillReturnRows(mockRows)
 
     mockArtistDao.EXPECT().
         Load(gomock.Eq(uint64(42))).
@@ -312,7 +322,8 @@ func TestAlbumDaoLoadAll(t *testing.T) {
                 Id: id,
                 Name: "Bobby",
             }
-        }).Times(3)
+        }).
+        Times(3)
 
     for i := 1; i < 4; i++ {
         mockTrackDao.EXPECT().
@@ -361,8 +372,8 @@ func TestAlbumDaoLoadAllScanError(t *testing.T) {
         SELECT
             \*
         FROM album
-    `).WillReturnRows(mockRows)
-
+    `).
+        WillReturnRows(mockRows)
 
     albums := dao.LoadAll()
     assert.NotNil(albums)
@@ -379,12 +390,17 @@ func disableTestAlbumDaoLoadAll(t *testing.T) {
 
     defer db.Close()
 
-    mockRows := sqlmock.NewRows([]string{"id", "name"}).AddRow(uint64(1), "James").AddRow(uint64(2), "Bobby").AddRow(uint64(3), "Frank").RowError(1, errors.New("Keep him away from the tables!"))
+    mockRows := sqlmock.NewRows([]string{"id", "title"}).
+        AddRow(uint64(1), "Album 1").
+        AddRow(uint64(2), "Little Bobby Tables").
+        AddRow(uint64(3), "Album 42").
+        RowError(1, errors.New("Keep him away from the tables!"))
     mock.ExpectQuery(`
         SELECT
             \*
         FROM album
-    `).WillReturnRows(mockRows)
+    `).
+        WillReturnRows(mockRows)
 
     dao := mysql.NewAlbumDao(db, nil, nil)
     defer dao.Close()

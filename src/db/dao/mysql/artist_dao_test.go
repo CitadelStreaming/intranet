@@ -34,21 +34,28 @@ func TestArtistDao(t *testing.T) {
         \)
         ON DUPLICATE KEY UPDATE
             name = VALUES\(name\)
-    `).WithArgs(artist.Id, artist.Name).WillReturnResult(sqlmock.NewResult(1, 1))
+    `).
+        WithArgs(artist.Id, artist.Name).
+        WillReturnResult(sqlmock.NewResult(1, 1))
 
-    mockRows := sqlmock.NewRows([]string{"id", "name"}).AddRow(uint64(1), "James")
+    mockRows := sqlmock.NewRows([]string{"id", "name"}).
+        AddRow(uint64(1), "James")
     mock.ExpectQuery(`
         SELECT
             \*
         FROM artist
         WHERE id = \?
-    `).WithArgs(1).WillReturnRows(mockRows)
+    `).
+        WithArgs(1).
+        WillReturnRows(mockRows)
 
     mock.ExpectExec(`
         DELETE
         FROM artist
         WHERE id = \?
-    `).WithArgs(artist.Id).WillReturnResult(sqlmock.NewResult(0, 1))
+    `).
+        WithArgs(artist.Id).
+        WillReturnResult(sqlmock.NewResult(0, 1))
 
     dao := mysql.NewArtistDao(db)
     defer dao.Close()
@@ -81,7 +88,9 @@ func TestArtistDaoLoadError(t *testing.T) {
             \*
         FROM artist
         WHERE id = \?
-    `).WithArgs(1).WillReturnError(errors.New("Something bad happened"))
+    `).
+        WithArgs(1).
+        WillReturnError(errors.New("Something bad happened"))
 
     dao := mysql.NewArtistDao(db)
     defer dao.Close()
@@ -109,7 +118,9 @@ func TestArtistDaoDeleteError(t *testing.T) {
         DELETE
         FROM artist
         WHERE id = \?
-    `).WithArgs(artist.Id).WillReturnError(errors.New("That's not a real user"))
+    `).
+        WithArgs(artist.Id).
+        WillReturnError(errors.New("That's not a real user"))
 
     dao := mysql.NewArtistDao(db)
     defer dao.Close()
@@ -145,7 +156,9 @@ func TestArtistDaoSaveError(t *testing.T) {
         \)
         ON DUPLICATE KEY UPDATE
             name = VALUES\(name\)
-    `).WithArgs(artist.Id, artist.Name).WillReturnError(errors.New("That's not a real user"))
+    `).
+        WithArgs(artist.Id, artist.Name).
+        WillReturnError(errors.New("That's not a real user"))
 
     dao := mysql.NewArtistDao(db)
     defer dao.Close()
@@ -169,7 +182,8 @@ func TestArtistDaoLoadAllError(t *testing.T) {
         SELECT
             \*
         FROM artist
-    `).WillReturnError(errors.New("Something bad happened"))
+    `).
+        WillReturnError(errors.New("Something bad happened"))
 
     dao := mysql.NewArtistDao(db)
     defer dao.Close()
@@ -188,12 +202,14 @@ func TestArtistDaoLoadAllScanError(t *testing.T) {
 
     defer db.Close()
 
-    mockRows := sqlmock.NewRows([]string{"id", "name"}).AddRow("cat", "James")
+    mockRows := sqlmock.NewRows([]string{"id", "name"}).
+        AddRow("cat", "James")
     mock.ExpectQuery(`
         SELECT
             \*
         FROM artist
-    `).WillReturnRows(mockRows)
+    `).
+        WillReturnRows(mockRows)
 
     dao := mysql.NewArtistDao(db)
     defer dao.Close()
@@ -213,12 +229,17 @@ func TestArtistDaoLoadAll(t *testing.T) {
 
     defer db.Close()
 
-    mockRows := sqlmock.NewRows([]string{"id", "name"}).AddRow(uint64(1), "James").AddRow(uint64(2), "Bobby").AddRow(uint64(3), "Frank").RowError(1, errors.New("Keep him away from the tables!"))
+    mockRows := sqlmock.NewRows([]string{"id", "name"}).
+        AddRow(uint64(1), "James").
+        AddRow(uint64(2), "Bobby").
+        AddRow(uint64(3), "Frank").
+        RowError(1, errors.New("Keep him away from the tables!"))
     mock.ExpectQuery(`
         SELECT
             \*
         FROM artist
-    `).WillReturnRows(mockRows)
+    `).
+        WillReturnRows(mockRows)
 
     dao := mysql.NewArtistDao(db)
     defer dao.Close()
