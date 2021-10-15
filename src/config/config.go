@@ -27,6 +27,9 @@ type Config struct {
     DbName string
 }
 
+/*
+Load a configuration from environment variables, providing default values
+*/
 func LoadConfig() Config {
     return Config{
         DbHost: getEnvStringWithDefault(ENV_DATABASE_HOST, "localhost"),

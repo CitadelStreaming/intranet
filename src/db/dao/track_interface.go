@@ -20,6 +20,11 @@ type TrackDao interface {
     Load(uint64) *model.Track
 
     /*
+    Load all tracks associated with an album id.
+    */
+    LoadForAlbum(uint64) []model.Track
+
+    /*
     Save an track via upsert.
 
     Returns the last inserted id and an error

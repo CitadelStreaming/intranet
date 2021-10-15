@@ -51,6 +51,7 @@ func TestArtistDao(t *testing.T) {
     `).WithArgs(artist.Id).WillReturnResult(sqlmock.NewResult(0, 1))
 
     dao := mysql.NewArtistDao(db)
+    defer dao.Close()
 
     rows, err := dao.Save(artist)
     assert.Nil(err)
@@ -83,6 +84,7 @@ func TestArtistDaoLoadError(t *testing.T) {
     `).WithArgs(1).WillReturnError(errors.New("Something bad happened"))
 
     dao := mysql.NewArtistDao(db)
+    defer dao.Close()
 
     result := dao.Load(uint64(1))
     assert.Nil(result)
@@ -110,6 +112,7 @@ func TestArtistDaoDeleteError(t *testing.T) {
     `).WithArgs(artist.Id).WillReturnError(errors.New("That's not a real user"))
 
     dao := mysql.NewArtistDao(db)
+    defer dao.Close()
 
     rowsAffected, err := dao.Delete(artist)
     assert.Equal(int64(0), rowsAffected)
@@ -145,6 +148,7 @@ func TestArtistDaoSaveError(t *testing.T) {
     `).WithArgs(artist.Id, artist.Name).WillReturnError(errors.New("That's not a real user"))
 
     dao := mysql.NewArtistDao(db)
+    defer dao.Close()
 
     lastId, err := dao.Save(artist)
     assert.Equal(int64(0), lastId)
@@ -168,9 +172,35 @@ func TestArtistDaoLoadAllError(t *testing.T) {
     `).WillReturnError(errors.New("Something bad happened"))
 
     dao := mysql.NewArtistDao(db)
+    defer dao.Close()
 
     result := dao.LoadAll()
     assert.Nil(result)
+
+    assert.Nil(mock.ExpectationsWereMet())
+}
+
+func TestArtistDaoLoadAllScanError(t *testing.T) {
+    assert := assert.New(t)
+
+    db, mock, err := sqlmock.New()
+    assert.Nil(err)
+
+    defer db.Close()
+
+    mockRows := sqlmock.NewRows([]string{"id", "name"}).AddRow("cat", "James")
+    mock.ExpectQuery(`
+        SELECT
+            \*
+        FROM artist
+    `).WillReturnRows(mockRows)
+
+    dao := mysql.NewArtistDao(db)
+    defer dao.Close()
+
+    result := dao.LoadAll()
+    assert.NotNil(result)
+    assert.Len(result, 0)
 
     assert.Nil(mock.ExpectationsWereMet())
 }
@@ -191,6 +221,7 @@ func TestArtistDaoLoadAll(t *testing.T) {
     `).WillReturnRows(mockRows)
 
     dao := mysql.NewArtistDao(db)
+    defer dao.Close()
 
     result := dao.LoadAll()
     assert.NotNil(result)

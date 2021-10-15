@@ -20,6 +20,7 @@ func NewArtistDao(db *sql.DB) dao.ArtistDao {
 }
 
 func (this artistDao) Close() {
+    logrus.Debug("Closing Album DAO")
 }
 
 func (this artistDao) Load(id uint64) *model.Artist {
@@ -43,7 +44,7 @@ func (this artistDao) Load(id uint64) *model.Artist {
 }
 
 func (this artistDao) LoadAll() []model.Artist {
-    var ret []model.Artist
+    var ret []model.Artist = make([]model.Artist, 0)
 
     rows, err := this.db.Query(`
         SELECT

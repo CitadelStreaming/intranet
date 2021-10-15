@@ -7,8 +7,14 @@ vet:
 	go vet ./...
 
 
-test:
+test: mock
 	go test ./...
 
-covtest:
-	go test -cover ./...
+covtest: mock
+	go test -coverprofile=coverage.out ./...
+
+covreport: covtest
+	go tool cover -html=coverage.out
+
+mock:
+	./bin/mocks.sh

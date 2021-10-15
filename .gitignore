@@ -1,2 +1,5 @@
 *.*.sw*
 .idea
+mock/
+/gomock_reflect_*
+coverage.out
