@@ -18,6 +18,8 @@ func TestLoadConfigEmpty(t *testing.T) {
     assert.Equal("", cfg.DbPass)
     assert.Equal(uint16(3306), cfg.DbPort)
     assert.Equal("", cfg.DbName)
+
+    assert.Equal("/var/migrations", cfg.MigrationsPath)
 }
 
 func TestLoadConfigSetValues(t *testing.T) {
@@ -29,6 +31,8 @@ func TestLoadConfigSetValues(t *testing.T) {
     assert.Nil(os.Setenv(config.ENV_DATABASE_PORT, "23306"))
     assert.Nil(os.Setenv(config.ENV_DATABASE_NAME, "db1"))
 
+    assert.Nil(os.Setenv(config.ENV_MIGRATIONS_PATH, "/opt/citadel/migrations"))
+
     cfg := config.LoadConfig()
 
     assert.Equal("database.local", cfg.DbHost)
@@ -36,6 +40,8 @@ func TestLoadConfigSetValues(t *testing.T) {
     assert.Equal("tables", cfg.DbPass)
     assert.Equal(uint16(23306), cfg.DbPort)
     assert.Equal("db1", cfg.DbName)
+
+    assert.Equal("/opt/citadel/migrations", cfg.MigrationsPath)
 }
 
 func TestLoadConfigSetValuesInvalidPort(t *testing.T) {
@@ -47,6 +53,8 @@ func TestLoadConfigSetValuesInvalidPort(t *testing.T) {
     assert.Nil(os.Setenv(config.ENV_DATABASE_PORT, "NotANumber"))
     assert.Nil(os.Setenv(config.ENV_DATABASE_NAME, "db1"))
 
+    assert.Nil(os.Setenv(config.ENV_MIGRATIONS_PATH, "/var/migrations"))
+
     cfg := config.LoadConfig()
 
     assert.Equal("database.local", cfg.DbHost)
@@ -54,4 +62,6 @@ func TestLoadConfigSetValuesInvalidPort(t *testing.T) {
     assert.Equal("tables", cfg.DbPass)
     assert.Equal(uint16(3306), cfg.DbPort)
     assert.Equal("db1", cfg.DbName)
+
+    assert.Equal("/var/migrations", cfg.MigrationsPath)
 }

@@ -17,6 +17,8 @@ const (
     ENV_DATABASE_PASS = "DB_PASS"
     ENV_DATABASE_PORT = "DB_PORT"
     ENV_DATABASE_NAME = "DB_NAME"
+
+    ENV_MIGRATIONS_PATH = "MIGRATIONS"
 )
 
 type Config struct {
@@ -25,6 +27,8 @@ type Config struct {
     DbPass string
     DbPort uint16
     DbName string
+
+    MigrationsPath string
 }
 
 /*
@@ -37,6 +41,8 @@ func LoadConfig() Config {
         DbPass: getEnvStringWithDefault(ENV_DATABASE_PASS, ""),
         DbPort: getEnvUint16WithDefault(ENV_DATABASE_PORT, 3306),
         DbName: getEnvStringWithDefault(ENV_DATABASE_NAME, ""),
+
+        MigrationsPath: getEnvStringWithDefault(ENV_MIGRATIONS_PATH, "/var/migrations"),
     }
 }
 
