@@ -18,3 +18,7 @@ covreport: covtest
 
 mock:
 	./bin/mocks.sh
+
+clean:
+	rm -rf coverage.out main gomock_reflect_*
+	find . -name mock -a -type d -exec rm -rf {} \;
