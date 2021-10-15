@@ -22,6 +22,20 @@ Run unit tests.
 
 Run unit tests with coverage.
 
+### `covreport`
+
+Runs unit tests with coverage and generates an HTML report.
+
+### `mock`
+
+Generates interface mocks automatically. All mocks will be placed in a `mock`
+package under their current directory structure. These files should **NOT** be
+checked in!
+
 ### `vet`
 
 Run through the linter.
+
+### `clean`
+
+Clean up all mocks, coverage reports, and the main application.

@@ -6,7 +6,6 @@ all: test vet
 vet:
 	go vet ./...
 
-
 test: mock
 	go test ./...
 
