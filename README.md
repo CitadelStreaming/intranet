@@ -14,6 +14,10 @@ or writing) are:
 
 Run through tests, vet, and finally build the intranet application.
 
+### `fmt`
+
+Run the go formatter.
+
 ### `test`
 
 Run unit tests.
@@ -25,6 +29,15 @@ Run unit tests with coverage.
 ### `covreport`
 
 Runs unit tests with coverage and generates an HTML report.
+
+### `intgtest`
+
+Run unit _and_ integration tests. Replies on setting up a docker MariaDB
+database.
+
+### `intgtestreport`
+
+Runs the integration tests and generates an HTML report of the coverage numbers.
 
 ### `mock`
 
