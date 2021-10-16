@@ -740,3 +740,178 @@ func TestRemoveAlbumError(t *testing.T) {
 	assert.Nil(err)
 	assert.Equal("{\"error\":\"Unable to delete album\"}", string(retBody))
 }
+
+func TestGetArtists(t *testing.T) {
+	assert := assert.New(t)
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	cfg := config.Config{
+		ServerHost: "",
+		ServerPort: 8080,
+	}
+
+	artists := []model.Artist{
+		{Id: 1, Name: "James"},
+		{Id: 2, Name: "Bobby"},
+		{Id: 3, Name: "Jayne"},
+	}
+
+	mockArtistDao := mock.NewMockArtistDao(ctrl)
+	mockArtistDao.EXPECT().
+		LoadAll().
+		Return(artists).
+		Times(1)
+	mockArtistDao.EXPECT().Close().Times(1)
+
+	server := server.NewServer(cfg)
+	dbClient := db.DatabaseClient{
+		Artist: mockArtistDao,
+	}
+
+	app := application.NewApp(dbClient, server)
+	assert.NotNil(app)
+	defer app.Close()
+	app.Run()
+
+	resp, err := http.Get("http://localhost:8080/api/v1/artist")
+	assert.Nil(err)
+	assert.Equal(http.StatusOK, resp.StatusCode)
+	defer resp.Body.Close()
+
+	retArtists := []model.Artist{}
+	retBody, err := ioutil.ReadAll(resp.Body)
+	assert.Nil(err)
+	assert.Nil(json.Unmarshal(retBody, &retArtists))
+	assert.Equal(artists, retArtists)
+}
+
+func TestCreateArtist(t *testing.T) {
+	assert := assert.New(t)
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	cfg := config.Config{
+		ServerHost: "",
+		ServerPort: 8080,
+	}
+
+	artist := model.Artist{
+		Name: "James",
+	}
+
+	mockArtistDao := mock.NewMockArtistDao(ctrl)
+	mockArtistDao.EXPECT().
+		Save(gomock.Eq(artist)).
+		Return(int64(1), nil).
+		Times(1)
+	mockArtistDao.EXPECT().Close().Times(1)
+
+	server := server.NewServer(cfg)
+	dbClient := db.DatabaseClient{
+		Artist: mockArtistDao,
+	}
+
+	app := application.NewApp(dbClient, server)
+	assert.NotNil(app)
+	defer app.Close()
+	app.Run()
+
+	body, err := json.Marshal(artist)
+	assert.Nil(err)
+
+	buffer := bytes.NewBuffer(body)
+	resp, err := http.Post("http://localhost:8080/api/v1/artist", "application/json", buffer)
+	assert.Nil(err)
+	defer resp.Body.Close()
+
+	artist.Id = 1
+	body, err = json.Marshal(artist)
+	assert.Nil(err)
+
+	retBody, err := ioutil.ReadAll(resp.Body)
+	assert.Nil(err)
+	assert.Equal(string(body), string(retBody))
+}
+
+func TestCreateArtistEmptyName(t *testing.T) {
+	assert := assert.New(t)
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	cfg := config.Config{
+		ServerHost: "",
+		ServerPort: 8080,
+	}
+
+	artist := model.Artist{}
+
+	mockArtistDao := mock.NewMockArtistDao(ctrl)
+	mockArtistDao.EXPECT().Close().Times(1)
+
+	server := server.NewServer(cfg)
+	dbClient := db.DatabaseClient{
+		Artist: mockArtistDao,
+	}
+
+	app := application.NewApp(dbClient, server)
+	assert.NotNil(app)
+	defer app.Close()
+	app.Run()
+
+	body, err := json.Marshal(artist)
+	assert.Nil(err)
+
+	buffer := bytes.NewBuffer(body)
+	resp, err := http.Post("http://localhost:8080/api/v1/artist", "application/json", buffer)
+	assert.Nil(err)
+	defer resp.Body.Close()
+
+	retBody, err := ioutil.ReadAll(resp.Body)
+	assert.Nil(err)
+	assert.Equal("{\"error\":\"Artists must be named.\"}", string(retBody))
+}
+
+func TestCreateArtistError(t *testing.T) {
+	assert := assert.New(t)
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	cfg := config.Config{
+		ServerHost: "",
+		ServerPort: 8080,
+	}
+
+	artist := model.Artist{
+		Name: "James",
+	}
+
+	mockArtistDao := mock.NewMockArtistDao(ctrl)
+	mockArtistDao.EXPECT().
+		Save(gomock.Eq(artist)).
+		Return(int64(0), errors.New("Wat")).
+		Times(1)
+	mockArtistDao.EXPECT().Close().Times(1)
+
+	server := server.NewServer(cfg)
+	dbClient := db.DatabaseClient{
+		Artist: mockArtistDao,
+	}
+
+	app := application.NewApp(dbClient, server)
+	assert.NotNil(app)
+	defer app.Close()
+	app.Run()
+
+	body, err := json.Marshal(artist)
+	assert.Nil(err)
+
+	buffer := bytes.NewBuffer(body)
+	resp, err := http.Post("http://localhost:8080/api/v1/artist", "application/json", buffer)
+	assert.Nil(err)
+	defer resp.Body.Close()
+
+	retBody, err := ioutil.ReadAll(resp.Body)
+	assert.Nil(err)
+	assert.Equal("{\"error\":\"Wat\"}", string(retBody))
+}

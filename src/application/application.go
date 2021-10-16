@@ -39,6 +39,10 @@ func (this App) Run() {
 		HandleFunc(http.MethodGet, this.retrieveAlbum).
 		HandleFunc(http.MethodPut, this.updateAlbum).
 		HandleFunc(http.MethodDelete, this.removeAlbum))
+
+	this.server.Mux.Handle("/api/v1/artist", muxie.Methods().
+		HandleFunc(http.MethodGet, this.retrieveArtists).
+		HandleFunc(http.MethodPost, this.createArtist))
 }
 
 func (this App) Close() {
@@ -169,4 +173,36 @@ func (this App) removeAlbum(out http.ResponseWriter, req *http.Request) {
 		out.WriteHeader(http.StatusInternalServerError)
 		writeBack(out, err)
 	}
+}
+
+func (this App) retrieveArtists(out http.ResponseWriter, req *http.Request) {
+	artists := this.db.Artist.LoadAll()
+	muxie.JSON.Dispatch(out, artists)
+}
+
+func (this App) createArtist(out http.ResponseWriter, req *http.Request) {
+	var err error
+	artist := model.Artist{}
+	muxie.JSON.Bind(req, &artist)
+
+	artist.Id = 0
+
+	if artist.Name == "" {
+		// Someone sent us an invalid request.
+		out.WriteHeader(http.StatusBadRequest)
+		writeBack(out, errors.New("Artists must be named."))
+		return
+	}
+
+	logrus.Info("Saving off artist with name=", artist.Name, " to ", this.db.Artist)
+	// We need to insert the artist, which is apparently new.
+	artist.Id, err = this.db.Artist.Save(artist)
+	if err != nil {
+		out.WriteHeader(http.StatusInternalServerError)
+		writeBack(out, err)
+		return
+	}
+
+	out.WriteHeader(http.StatusCreated)
+	muxie.JSON.Dispatch(out, &artist)
 }
