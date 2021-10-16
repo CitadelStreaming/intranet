@@ -1,0 +1,12 @@
+#!/bin/bash
+source ./bin/utils.sh
+
+requires systemctl || die "Unable to find required applications, exiting."
+
+if exists docker && systemctl -q is-active docker; then
+    which docker
+elif exists podman; then
+    which podman
+else
+    warning "Unable to find a container runtime"
+fi

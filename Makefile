@@ -1,5 +1,7 @@
 .PHONY: all covtest
 
+TAGS:="config,-integration"
+
 all: test vet
 	go build src/main.go
 
@@ -7,13 +9,16 @@ vet:
 	go vet ./...
 
 test: mock
-	go test ./...
+	go test --tags="${TAGS}" ./...
 
 covtest: mock
-	go test -coverprofile=coverage.out ./...
+	go test -coverprofile=coverage.out --tags="${TAGS}" ./...
 
 covreport: covtest
 	go tool cover -html=coverage.out
+
+intgtest: mock
+	./bin/intgtest.sh
 
 mock:
 	./bin/mocks.sh

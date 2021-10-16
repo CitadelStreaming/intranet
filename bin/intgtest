@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+./bin/oci-exec run --detach -p 3306:3306 --rm --env=MYSQL_ROOT_PASSWORD=pass mariadb:latest
+container=$(./bin/oci-exec ps -q | tail -1)
+
+mysql --user=root --password=pass -e "CREATE DATABASE testbed" && \
+DB_USER=root DB_PASS=pass DB_NAME=testbed go test -coverprofile=coverage.out --tags="integration" ./...
+
+./bin/oci-exec kill ${container}
