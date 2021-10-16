@@ -3,3 +3,4 @@
 mock/
 /gomock_reflect_*
 coverage.out
+/main
