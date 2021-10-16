@@ -10,7 +10,7 @@ import (
 )
 
 type Server struct {
-    server http.Server
+    server *http.Server
     Mux *muxie.Mux
 }
 
@@ -27,7 +27,7 @@ func NewServer(cfg config.Config) Server {
     go server.ListenAndServe()
 
     return Server{
-        server: server,
+        server: &server,
         Mux: mux,
     }
 }
