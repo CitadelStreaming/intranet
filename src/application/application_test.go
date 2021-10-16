@@ -915,3 +915,199 @@ func TestCreateArtistError(t *testing.T) {
 	assert.Nil(err)
 	assert.Equal("{\"error\":\"Wat\"}", string(retBody))
 }
+
+func TestUpdateTrackInvalidId(t *testing.T) {
+	assert := assert.New(t)
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	cfg := config.Config{
+		ServerHost: "",
+		ServerPort: 8080,
+	}
+
+	mockTrackDao := mock.NewMockTrackDao(ctrl)
+	mockTrackDao.EXPECT().Close().Times(1)
+
+	server := server.NewServer(cfg)
+	dbClient := db.DatabaseClient{
+		Track: mockTrackDao,
+	}
+
+	app := application.NewApp(dbClient, server)
+	assert.NotNil(app)
+	defer app.Close()
+	app.Run()
+
+	req, err := http.NewRequest(http.MethodPut, "http://localhost:8080/api/v1/track/cats", nil)
+	assert.Nil(err)
+
+	httpClient := &http.Client{}
+
+	resp, err := httpClient.Do(req)
+	assert.Nil(err)
+	assert.Equal(http.StatusBadRequest, resp.StatusCode)
+	defer resp.Body.Close()
+
+	retBody, err := ioutil.ReadAll(resp.Body)
+	assert.Nil(err)
+	assert.Equal("{\"error\":\"Invalid ID provided. Must be an integer.\"}", string(retBody))
+}
+
+func TestUpdateTrack(t *testing.T) {
+	assert := assert.New(t)
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	cfg := config.Config{
+		ServerHost: "",
+		ServerPort: 8080,
+	}
+
+	track := model.Track{
+		Id:     456,
+		Title:  "Something Wicked This Way Comes",
+		Rating: 0,
+	}
+
+	mockTrackDao := mock.NewMockTrackDao(ctrl)
+	mockTrackDao.EXPECT().
+		Save(gomock.Eq(track)).
+		Return(int64(456), nil).
+		Times(1)
+	mockTrackDao.EXPECT().Close().Times(1)
+
+	server := server.NewServer(cfg)
+	dbClient := db.DatabaseClient{
+		Track: mockTrackDao,
+	}
+
+	app := application.NewApp(dbClient, server)
+	assert.NotNil(app)
+	defer app.Close()
+	app.Run()
+
+	body, err := json.Marshal(track)
+	assert.Nil(err)
+
+	buffer := bytes.NewBuffer(body)
+
+	req, err := http.NewRequest(http.MethodPut, "http://localhost:8080/api/v1/track/456", buffer)
+	assert.Nil(err)
+
+	httpClient := &http.Client{}
+
+	resp, err := httpClient.Do(req)
+	assert.Nil(err)
+	assert.Equal(http.StatusOK, resp.StatusCode)
+	defer resp.Body.Close()
+}
+
+func TestUpdateTrackError(t *testing.T) {
+	assert := assert.New(t)
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	cfg := config.Config{
+		ServerHost: "",
+		ServerPort: 8080,
+	}
+
+	track := model.Track{
+		Id:     456,
+		Title:  "Something Wicked This Way Comes",
+		Rating: 0,
+	}
+
+	mockTrackDao := mock.NewMockTrackDao(ctrl)
+	mockTrackDao.EXPECT().
+		Save(gomock.Eq(track)).
+		Return(int64(0), errors.New("Bad day")).
+		Times(1)
+	mockTrackDao.EXPECT().Close().Times(1)
+
+	server := server.NewServer(cfg)
+	dbClient := db.DatabaseClient{
+		Track: mockTrackDao,
+	}
+
+	app := application.NewApp(dbClient, server)
+	assert.NotNil(app)
+	defer app.Close()
+	app.Run()
+
+	body, err := json.Marshal(track)
+	assert.Nil(err)
+
+	buffer := bytes.NewBuffer(body)
+
+	req, err := http.NewRequest(http.MethodPut, "http://localhost:8080/api/v1/track/456", buffer)
+	assert.Nil(err)
+
+	httpClient := &http.Client{}
+
+	resp, err := httpClient.Do(req)
+	assert.Nil(err)
+	assert.Equal(http.StatusInternalServerError, resp.StatusCode)
+	defer resp.Body.Close()
+
+	retBody, err := ioutil.ReadAll(resp.Body)
+	assert.Nil(err)
+	assert.Equal("{\"error\":\"Bad day\"}", string(retBody))
+}
+
+func TestCreateTrack(t *testing.T) {
+	assert := assert.New(t)
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	cfg := config.Config{
+		ServerHost: "",
+		ServerPort: 8080,
+	}
+
+	track := model.Track{
+		Title:  "Something Wicked This Way Comes",
+		Rating: 0,
+	}
+
+	mockTrackDao := mock.NewMockTrackDao(ctrl)
+	mockTrackDao.EXPECT().
+		Save(gomock.Eq(track)).
+		Return(int64(111), nil).
+		Times(1)
+	mockTrackDao.EXPECT().Close().Times(1)
+
+	server := server.NewServer(cfg)
+	dbClient := db.DatabaseClient{
+		Track: mockTrackDao,
+	}
+
+	app := application.NewApp(dbClient, server)
+	assert.NotNil(app)
+	defer app.Close()
+	app.Run()
+
+	body, err := json.Marshal(track)
+	assert.Nil(err)
+
+	buffer := bytes.NewBuffer(body)
+
+	req, err := http.NewRequest(http.MethodPost, "http://localhost:8080/api/v1/track", buffer)
+	assert.Nil(err)
+
+	httpClient := &http.Client{}
+
+	resp, err := httpClient.Do(req)
+	assert.Nil(err)
+	assert.Equal(http.StatusCreated, resp.StatusCode)
+	defer resp.Body.Close()
+
+	track.Id = 111
+	body, err = json.Marshal(track)
+	assert.Nil(err)
+
+	retBody, err := ioutil.ReadAll(resp.Body)
+	assert.Nil(err)
+	assert.Equal(string(body), string(retBody))
+}

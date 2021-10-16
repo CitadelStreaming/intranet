@@ -43,6 +43,12 @@ func (this App) Run() {
 	this.server.Mux.Handle("/api/v1/artist", muxie.Methods().
 		HandleFunc(http.MethodGet, this.retrieveArtists).
 		HandleFunc(http.MethodPost, this.createArtist))
+
+	this.server.Mux.Handle("/api/v1/track", muxie.Methods().
+		HandleFunc(http.MethodPost, this.createTrack))
+
+	this.server.Mux.Handle("/api/v1/track/:id", muxie.Methods().
+		HandleFunc(http.MethodPut, this.updateTrack))
 }
 
 func (this App) Close() {
@@ -195,7 +201,6 @@ func (this App) createArtist(out http.ResponseWriter, req *http.Request) {
 	}
 
 	logrus.Info("Saving off artist with name=", artist.Name, " to ", this.db.Artist)
-	// We need to insert the artist, which is apparently new.
 	artist.Id, err = this.db.Artist.Save(artist)
 	if err != nil {
 		out.WriteHeader(http.StatusInternalServerError)
@@ -205,4 +210,40 @@ func (this App) createArtist(out http.ResponseWriter, req *http.Request) {
 
 	out.WriteHeader(http.StatusCreated)
 	muxie.JSON.Dispatch(out, &artist)
+}
+
+func (this App) upsertTrack(out http.ResponseWriter, req *http.Request, trackId int64) {
+	var err error
+	track := model.Track{}
+	muxie.JSON.Bind(req, &track)
+
+	track.Id = trackId
+
+	logrus.Info("Saving off track with name=", track.Title, " to ", this.db.Track)
+	track.Id, err = this.db.Track.Save(track)
+	if err != nil {
+		out.WriteHeader(http.StatusInternalServerError)
+		writeBack(out, err)
+		return
+	}
+
+	if trackId == 0 {
+		out.WriteHeader(http.StatusCreated)
+		muxie.JSON.Dispatch(out, &track)
+	} else {
+		out.WriteHeader(http.StatusOK)
+	}
+}
+
+func (this App) createTrack(out http.ResponseWriter, req *http.Request) {
+	this.upsertTrack(out, req, 0)
+}
+
+func (this App) updateTrack(out http.ResponseWriter, req *http.Request) {
+	var trackId int64
+	if trackId = parseIdFromUrl(out); trackId == 0 {
+		return
+	}
+
+	this.upsertTrack(out, req, trackId)
 }
