@@ -31,6 +31,7 @@ func TestDaoCalls(t *testing.T) {
 
     db := db.NewDatabaseClient(cfg)
     assert.NotNil(db)
+    db.Migrate(cfg.MigrationsPath)
     defer db.Close()
 
     artist := model.Artist{

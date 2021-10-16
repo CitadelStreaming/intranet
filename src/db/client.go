@@ -12,27 +12,15 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-type databaseClient struct {
+type DatabaseClient struct {
 	db     *sql.DB
 	Artist dao.ArtistDao
 	Album  dao.AlbumDao
 	Track  dao.TrackDao
 }
 
-type DatabaseClient interface {
-	/*
-	   Shut down database connection and all associated resources.
-	*/
-	Close()
-}
-
-func NewDatabaseClient(cfg config.Config) databaseClient {
-	db, err := sql.Open("mysql", getConnectionString(cfg))
-	if err != nil {
-		logrus.Panic("Unable to connect to database: ", err.Error())
-	}
-
-	client := databaseClient{
+func NewDatabaseClientFromConnection(db *sql.DB) DatabaseClient {
+	client := DatabaseClient{
 		db:     db,
 		Artist: mysql.NewArtistDao(db),
 		Album:  nil,
@@ -40,12 +28,23 @@ func NewDatabaseClient(cfg config.Config) databaseClient {
 	}
 	client.Album = mysql.NewAlbumDao(client.db, client.Artist, client.Track)
 
-	migrate(db, cfg.MigrationsPath)
-
 	return client
 }
 
-func (this databaseClient) Close() {
+func NewDatabaseClient(cfg config.Config) DatabaseClient {
+	db, err := sql.Open("mysql", getConnectionString(cfg))
+	if err != nil {
+		logrus.Panic("Unable to connect to database: ", err.Error())
+	}
+
+    return NewDatabaseClientFromConnection(db)
+}
+
+func (this DatabaseClient) Migrate(migrationsPath string) {
+	migrate(this.db, migrationsPath)
+}
+
+func (this DatabaseClient) Close() {
 	this.Artist.Close()
 	this.Album.Close()
 	this.Track.Close()
