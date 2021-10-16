@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"strconv"
 
 	"citadel_intranet/src/db"
 	"citadel_intranet/src/db/model"
@@ -34,6 +35,10 @@ func (this App) Run() {
 		HandleFunc(http.MethodGet, this.retrieveAllAlbums).
 		HandleFunc(http.MethodPost, this.createAlbum))
 
+	this.server.Mux.Handle("/api/v1/album/:id", muxie.Methods().
+		HandleFunc(http.MethodGet, this.retrieveAlbum).
+		HandleFunc(http.MethodPut, this.updateAlbum).
+		HandleFunc(http.MethodDelete, this.removeAlbum))
 }
 
 func (this App) Close() {
@@ -41,7 +46,7 @@ func (this App) Close() {
 	this.db.Close()
 }
 
-func writeBack(out *http.ResponseWriter, value interface{}) error {
+func writeBack(out http.ResponseWriter, value interface{}) error {
 	if v, ok := value.(error); ok {
 		value = AppErr{v.Error()}
 	}
@@ -55,7 +60,7 @@ func writeBack(out *http.ResponseWriter, value interface{}) error {
 	offset := 0
 
 	for offset < bufferSize {
-		written, err := (*out).Write(buffer[offset:])
+		written, err := out.Write(buffer[offset:])
 		if err != nil {
 			return err
 		}
@@ -71,14 +76,12 @@ func (this App) retrieveAllAlbums(out http.ResponseWriter, req *http.Request) {
 	muxie.JSON.Dispatch(out, albums)
 }
 
-func (this App) createAlbum(out http.ResponseWriter, req *http.Request) {
+func (this App) upsertAlbum(out http.ResponseWriter, req *http.Request, albumId int64) {
 	var err error
 	album := model.Album{}
 	muxie.JSON.Bind(req, &album)
 
-	// Ensure that we didn't get an ID sent to us, we are creating a new Album,
-	// _not_ updating.
-	album.Id = 0
+	album.Id = albumId
 
 	if album.Artist.Id == 0 {
 		if album.Artist.Name != "" {
@@ -87,13 +90,13 @@ func (this App) createAlbum(out http.ResponseWriter, req *http.Request) {
 			album.Artist.Id, err = this.db.Artist.Save(album.Artist)
 			if err != nil {
 				out.WriteHeader(http.StatusInternalServerError)
-				writeBack(&out, err)
+				writeBack(out, err)
 				return
 			}
 		} else {
 			// Someone sent us an invalid request.
 			out.WriteHeader(http.StatusBadRequest)
-			writeBack(&out, errors.New("Invalid album artist provided. Name cannot be empty when inserting an artist."))
+			writeBack(out, errors.New("Invalid album artist provided. Name cannot be empty when inserting an artist."))
 			return
 		}
 	}
@@ -101,10 +104,69 @@ func (this App) createAlbum(out http.ResponseWriter, req *http.Request) {
 	album.Id, err = this.db.Album.Save(album)
 	if err != nil {
 		out.WriteHeader(http.StatusInternalServerError)
-		writeBack(&out, err)
+		writeBack(out, err)
 		return
 	}
 
-	out.WriteHeader(http.StatusCreated)
-	muxie.JSON.Dispatch(out, &album)
+	if albumId == 0 {
+		out.WriteHeader(http.StatusCreated)
+		muxie.JSON.Dispatch(out, &album)
+	} else {
+		out.WriteHeader(http.StatusOK)
+	}
+}
+
+func (this App) createAlbum(out http.ResponseWriter, req *http.Request) {
+	// Ensure that we didn't get an ID sent to us, we are creating a new Album,
+	// _not_ updating.
+	this.upsertAlbum(out, req, 0)
+}
+
+func parseIdFromUrl(out http.ResponseWriter) int64 {
+	albumIdStr := muxie.GetParam(out, "id")
+	albumId, err := strconv.ParseInt(albumIdStr, 10, 64)
+	if err != nil {
+		out.WriteHeader(http.StatusBadRequest)
+		writeBack(out, errors.New("Invalid ID provided. Must be an integer."))
+		return 0
+	}
+
+	return albumId
+}
+
+func (this App) retrieveAlbum(out http.ResponseWriter, req *http.Request) {
+	var albumId int64
+	if albumId = parseIdFromUrl(out); albumId == 0 {
+		return
+	}
+
+	album := this.db.Album.Load(albumId)
+	if album == nil {
+		out.WriteHeader(http.StatusNotFound)
+		writeBack(out, errors.New("Album not found."))
+		return
+	}
+	muxie.JSON.Dispatch(out, album)
+}
+
+func (this App) updateAlbum(out http.ResponseWriter, req *http.Request) {
+	var albumId int64
+	if albumId = parseIdFromUrl(out); albumId == 0 {
+		return
+	}
+
+	this.upsertAlbum(out, req, albumId)
+}
+
+func (this App) removeAlbum(out http.ResponseWriter, req *http.Request) {
+	var albumId int64
+	if albumId = parseIdFromUrl(out); albumId == 0 {
+		return
+	}
+
+	_, err := this.db.Album.Delete(model.Album{Id: albumId})
+	if err != nil {
+		out.WriteHeader(http.StatusInternalServerError)
+		writeBack(out, err)
+	}
 }

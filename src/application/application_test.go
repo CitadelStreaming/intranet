@@ -410,3 +410,333 @@ func TestCreateAlbumError(t *testing.T) {
 	assert.Nil(err)
 	assert.Equal("{\"error\":\"Waffles\"}", string(retBody))
 }
+
+func TestRetrieveAlbum(t *testing.T) {
+	assert := assert.New(t)
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	cfg := config.Config{
+		ServerHost: "",
+		ServerPort: 8080,
+	}
+
+	album := model.Album{
+		Id:    123,
+		Title: "Something Wicked This Way Comes",
+		Artist: model.Artist{
+			Id:   42,
+			Name: "James",
+		},
+		Published: false,
+		Rating:    0,
+	}
+
+	mockAlbumDao := mock.NewMockAlbumDao(ctrl)
+	mockAlbumDao.EXPECT().
+		Load(gomock.Eq(album.Id)).
+		Return(&album).
+		Times(1)
+	mockAlbumDao.EXPECT().Close().Times(1)
+
+	server := server.NewServer(cfg)
+	dbClient := db.DatabaseClient{
+		Album: mockAlbumDao,
+	}
+
+	app := application.NewApp(dbClient, server)
+	assert.NotNil(app)
+	defer app.Close()
+	app.Run()
+
+	resp, err := http.Get("http://localhost:8080/api/v1/album/123")
+	assert.Nil(err)
+	assert.Equal(http.StatusOK, resp.StatusCode)
+	defer resp.Body.Close()
+
+	retAlbum := model.Album{}
+	retBody, err := ioutil.ReadAll(resp.Body)
+	assert.Nil(err)
+	assert.Nil(json.Unmarshal(retBody, &retAlbum))
+	assert.Equal(album, retAlbum)
+}
+
+func TestRetrieveAlbumNotFound(t *testing.T) {
+	assert := assert.New(t)
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	cfg := config.Config{
+		ServerHost: "",
+		ServerPort: 8080,
+	}
+
+	mockAlbumDao := mock.NewMockAlbumDao(ctrl)
+	mockAlbumDao.EXPECT().
+		Load(gomock.Eq(int64(13))).
+		Return(nil).
+		Times(1)
+	mockAlbumDao.EXPECT().Close().Times(1)
+
+	server := server.NewServer(cfg)
+	dbClient := db.DatabaseClient{
+		Album: mockAlbumDao,
+	}
+
+	app := application.NewApp(dbClient, server)
+	assert.NotNil(app)
+	defer app.Close()
+	app.Run()
+
+	resp, err := http.Get("http://localhost:8080/api/v1/album/13")
+	assert.Nil(err)
+	assert.Equal(http.StatusNotFound, resp.StatusCode)
+	defer resp.Body.Close()
+
+	retBody, err := ioutil.ReadAll(resp.Body)
+	assert.Nil(err)
+	assert.Equal("{\"error\":\"Album not found.\"}", string(retBody))
+}
+
+func TestRetrieveAlbumInvalidId(t *testing.T) {
+	assert := assert.New(t)
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	cfg := config.Config{
+		ServerHost: "",
+		ServerPort: 8080,
+	}
+
+	mockAlbumDao := mock.NewMockAlbumDao(ctrl)
+	mockAlbumDao.EXPECT().Close().Times(1)
+
+	server := server.NewServer(cfg)
+	dbClient := db.DatabaseClient{
+		Album: mockAlbumDao,
+	}
+
+	app := application.NewApp(dbClient, server)
+	assert.NotNil(app)
+	defer app.Close()
+	app.Run()
+
+	resp, err := http.Get("http://localhost:8080/api/v1/album/cats")
+	assert.Nil(err)
+	assert.Equal(http.StatusBadRequest, resp.StatusCode)
+	defer resp.Body.Close()
+
+	retBody, err := ioutil.ReadAll(resp.Body)
+	assert.Nil(err)
+	assert.Equal("{\"error\":\"Invalid ID provided. Must be an integer.\"}", string(retBody))
+}
+
+func TestUpdateAlbumInvalidId(t *testing.T) {
+	assert := assert.New(t)
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	cfg := config.Config{
+		ServerHost: "",
+		ServerPort: 8080,
+	}
+
+	mockAlbumDao := mock.NewMockAlbumDao(ctrl)
+	mockAlbumDao.EXPECT().Close().Times(1)
+
+	server := server.NewServer(cfg)
+	dbClient := db.DatabaseClient{
+		Album: mockAlbumDao,
+	}
+
+	app := application.NewApp(dbClient, server)
+	assert.NotNil(app)
+	defer app.Close()
+	app.Run()
+
+	req, err := http.NewRequest(http.MethodPut, "http://localhost:8080/api/v1/album/cats", nil)
+	assert.Nil(err)
+
+	httpClient := &http.Client{}
+
+	resp, err := httpClient.Do(req)
+	assert.Nil(err)
+	assert.Equal(http.StatusBadRequest, resp.StatusCode)
+	defer resp.Body.Close()
+
+	retBody, err := ioutil.ReadAll(resp.Body)
+	assert.Nil(err)
+	assert.Equal("{\"error\":\"Invalid ID provided. Must be an integer.\"}", string(retBody))
+}
+
+func TestUpdateAlbum(t *testing.T) {
+	assert := assert.New(t)
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	cfg := config.Config{
+		ServerHost: "",
+		ServerPort: 8080,
+	}
+
+	album := model.Album{
+		Id:    456,
+		Title: "Something Wicked This Way Comes",
+		Artist: model.Artist{
+			Id:   42,
+			Name: "James",
+		},
+		Published: false,
+		Rating:    0,
+	}
+
+	mockAlbumDao := mock.NewMockAlbumDao(ctrl)
+	mockAlbumDao.EXPECT().
+		Save(gomock.Eq(album)).
+		Return(int64(456), nil).
+		Times(1)
+	mockAlbumDao.EXPECT().Close().Times(1)
+
+	server := server.NewServer(cfg)
+	dbClient := db.DatabaseClient{
+		Album: mockAlbumDao,
+	}
+
+	app := application.NewApp(dbClient, server)
+	assert.NotNil(app)
+	defer app.Close()
+	app.Run()
+
+	body, err := json.Marshal(album)
+	assert.Nil(err)
+
+	buffer := bytes.NewBuffer(body)
+
+	req, err := http.NewRequest(http.MethodPut, "http://localhost:8080/api/v1/album/456", buffer)
+	assert.Nil(err)
+
+	httpClient := &http.Client{}
+
+	resp, err := httpClient.Do(req)
+	assert.Nil(err)
+	assert.Equal(http.StatusOK, resp.StatusCode)
+	defer resp.Body.Close()
+}
+
+func TestRemoveAlbumInvalidId(t *testing.T) {
+	assert := assert.New(t)
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	cfg := config.Config{
+		ServerHost: "",
+		ServerPort: 8080,
+	}
+
+	mockAlbumDao := mock.NewMockAlbumDao(ctrl)
+	mockAlbumDao.EXPECT().Close().Times(1)
+
+	server := server.NewServer(cfg)
+	dbClient := db.DatabaseClient{
+		Album: mockAlbumDao,
+	}
+
+	app := application.NewApp(dbClient, server)
+	assert.NotNil(app)
+	defer app.Close()
+	app.Run()
+
+	req, err := http.NewRequest(http.MethodDelete, "http://localhost:8080/api/v1/album/cats", nil)
+	assert.Nil(err)
+
+	httpClient := &http.Client{}
+
+	resp, err := httpClient.Do(req)
+	assert.Nil(err)
+	assert.Equal(http.StatusBadRequest, resp.StatusCode)
+	defer resp.Body.Close()
+
+	retBody, err := ioutil.ReadAll(resp.Body)
+	assert.Nil(err)
+	assert.Equal("{\"error\":\"Invalid ID provided. Must be an integer.\"}", string(retBody))
+}
+
+func TestRemoveAlbum(t *testing.T) {
+	assert := assert.New(t)
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	cfg := config.Config{
+		ServerHost: "",
+		ServerPort: 8080,
+	}
+
+	mockAlbumDao := mock.NewMockAlbumDao(ctrl)
+	mockAlbumDao.EXPECT().
+		Delete(gomock.Eq(model.Album{Id: 456})).
+		Return(int64(1), nil).
+		Times(1)
+	mockAlbumDao.EXPECT().Close().Times(1)
+
+	server := server.NewServer(cfg)
+	dbClient := db.DatabaseClient{
+		Album: mockAlbumDao,
+	}
+
+	app := application.NewApp(dbClient, server)
+	assert.NotNil(app)
+	defer app.Close()
+	app.Run()
+
+	req, err := http.NewRequest(http.MethodDelete, "http://localhost:8080/api/v1/album/456", nil)
+	assert.Nil(err)
+
+	httpClient := &http.Client{}
+
+	resp, err := httpClient.Do(req)
+	assert.Nil(err)
+	assert.Equal(http.StatusOK, resp.StatusCode)
+	defer resp.Body.Close()
+}
+
+func TestRemoveAlbumError(t *testing.T) {
+	assert := assert.New(t)
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	cfg := config.Config{
+		ServerHost: "",
+		ServerPort: 8080,
+	}
+
+	mockAlbumDao := mock.NewMockAlbumDao(ctrl)
+	mockAlbumDao.EXPECT().
+		Delete(gomock.Eq(model.Album{Id: 456})).
+		Return(int64(0), errors.New("Unable to delete album")).
+		Times(1)
+	mockAlbumDao.EXPECT().Close().Times(1)
+
+	server := server.NewServer(cfg)
+	dbClient := db.DatabaseClient{
+		Album: mockAlbumDao,
+	}
+
+	app := application.NewApp(dbClient, server)
+	assert.NotNil(app)
+	defer app.Close()
+	app.Run()
+
+	req, err := http.NewRequest(http.MethodDelete, "http://localhost:8080/api/v1/album/456", nil)
+	assert.Nil(err)
+
+	httpClient := &http.Client{}
+
+	resp, err := httpClient.Do(req)
+	assert.Nil(err)
+	assert.Equal(http.StatusInternalServerError, resp.StatusCode)
+	defer resp.Body.Close()
+
+	retBody, err := ioutil.ReadAll(resp.Body)
+	assert.Nil(err)
+	assert.Equal("{\"error\":\"Unable to delete album\"}", string(retBody))
+}
