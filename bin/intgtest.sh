@@ -10,10 +10,7 @@ for i in {0..10}; do
     break
 done
 
-# It is worth noting that config tests _will_ fail during integration runs
-# because we are relying on environment variables to connect to a live
-# database.
 mysql --user=root --password=pass --port=3306 --host=127.0.0.1 -e "SELECT VERSION()" testbed && \
-DB_USER=root DB_PASS=pass DB_NAME=testbed go test -coverprofile=coverage.out --tags="integration,-config" ./...
+go test -coverprofile=coverage.out --tags="integration" ./...
 
 ./bin/oci-exec kill ${container}
