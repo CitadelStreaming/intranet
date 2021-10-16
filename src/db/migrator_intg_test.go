@@ -32,7 +32,7 @@ func TestRunMigrations(t *testing.T) {
 		db := db.NewDatabaseClient(cfg)
 		assert.NotNil(db)
 		defer db.Close()
-        db.Migrate(cfg.MigrationsPath)
+		db.Migrate(cfg.MigrationsPath)
 	}
 
 	callback()
@@ -63,9 +63,9 @@ func TestBadConnection(t *testing.T) {
 		}
 
 		// This should be a fatal error due to not being able to connect
-        client := db.NewDatabaseClient(cfg)
-        client.Migrate(cfg.MigrationsPath)
-        defer client.Close()
+		client := db.NewDatabaseClient(cfg)
+		client.Migrate(cfg.MigrationsPath)
+		defer client.Close()
 		assert.False(true, "The code didn't hit a fatal error")
 	})()
 }

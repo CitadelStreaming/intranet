@@ -18,9 +18,9 @@ const (
 	ENV_DATABASE_PORT = "DB_PORT"
 	ENV_DATABASE_NAME = "DB_NAME"
 
-    ENV_SERVER_HOST = "SERVER_HOST"
-    ENV_SERVER_PORT = "SERVER_PORT"
-    ENV_SERVER_PATH = "SERVER_PATH"
+	ENV_SERVER_HOST = "SERVER_HOST"
+	ENV_SERVER_PORT = "SERVER_PORT"
+	ENV_SERVER_PATH = "SERVER_PATH"
 
 	ENV_MIGRATIONS_PATH = "MIGRATIONS"
 )
@@ -32,9 +32,9 @@ type Config struct {
 	DbPort uint16
 	DbName string
 
-    ServerHost string
-    ServerPort uint16
-    ServerFilePath string
+	ServerHost     string
+	ServerPort     uint16
+	ServerFilePath string
 
 	MigrationsPath string
 }
@@ -50,8 +50,8 @@ func LoadConfig() Config {
 		DbPort: getEnvUint16WithDefault(ENV_DATABASE_PORT, 3306),
 		DbName: getEnvStringWithDefault(ENV_DATABASE_NAME, ""),
 
-		ServerHost: getEnvStringWithDefault(ENV_SERVER_HOST, "localhost"),
-		ServerPort: getEnvUint16WithDefault(ENV_SERVER_PORT, 8080),
+		ServerHost:     getEnvStringWithDefault(ENV_SERVER_HOST, "localhost"),
+		ServerPort:     getEnvUint16WithDefault(ENV_SERVER_PORT, 8080),
 		ServerFilePath: getEnvStringWithDefault(ENV_SERVER_PATH, "/var/www"),
 
 		MigrationsPath: getEnvStringWithDefault(ENV_MIGRATIONS_PATH, "/var/migrations"),

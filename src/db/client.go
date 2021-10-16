@@ -37,7 +37,7 @@ func NewDatabaseClient(cfg config.Config) DatabaseClient {
 		logrus.Panic("Unable to connect to database: ", err.Error())
 	}
 
-    return NewDatabaseClientFromConnection(db)
+	return NewDatabaseClientFromConnection(db)
 }
 
 func (this DatabaseClient) Migrate(migrationsPath string) {
