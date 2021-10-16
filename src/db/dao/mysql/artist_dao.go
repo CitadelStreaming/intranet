@@ -10,82 +10,82 @@ import (
 )
 
 type artistDao struct {
-    db *sql.DB
+	db *sql.DB
 }
 
 func NewArtistDao(db *sql.DB) dao.ArtistDao {
-    return artistDao{
-        db: db,
-    }
+	return artistDao{
+		db: db,
+	}
 }
 
 func (this artistDao) Close() {
-    logrus.Debug("Closing Album DAO")
+	logrus.Debug("Closing Album DAO")
 }
 
 func (this artistDao) Load(id uint64) *model.Artist {
-    var artist *model.Artist = &model.Artist{}
+	var artist *model.Artist = &model.Artist{}
 
-    row := this.db.QueryRow(`
+	row := this.db.QueryRow(`
         SELECT
             *
         FROM artist
         WHERE id = ?
     `, id)
 
-    err := row.Scan(&artist.Id, &artist.Name)
+	err := row.Scan(&artist.Id, &artist.Name)
 
-    if err != nil {
-        logrus.Warn("Loading failed for ", id, " ", err.Error())
-        return nil
-    }
+	if err != nil {
+		logrus.Warn("Loading failed for ", id, " ", err.Error())
+		return nil
+	}
 
-    return artist
+	return artist
 }
 
 func (this artistDao) LoadAll() []model.Artist {
-    var ret []model.Artist = make([]model.Artist, 0)
+	var ret []model.Artist = make([]model.Artist, 0)
 
-    rows, err := this.db.Query(`
+	rows, err := this.db.Query(`
         SELECT
             *
         FROM artist
     `)
 
-    if err != nil {
-        logrus.Warn("Unable to load artists ", err.Error())
-        return nil
-    }
+	if err != nil {
+		logrus.Warn("Unable to load artists ", err.Error())
+		return nil
+	}
 
-    for rows.Next() {
-        var artist model.Artist
-        err := rows.Scan(&artist.Id, &artist.Name)
+	for rows.Next() {
+		var artist model.Artist
+		err := rows.Scan(&artist.Id, &artist.Name)
 
-        if err != nil {
-            logrus.Warn(err.Error())
-        } else {
-            ret = append(ret, artist)
-        }
-    }
-    
-    return ret
+		if err != nil {
+			logrus.Warn(err.Error())
+		} else {
+			ret = append(ret, artist)
+		}
+	}
+
+	return ret
 }
 
 func (this artistDao) Delete(artist model.Artist) (int64, error) {
-    result, err := this.db.Exec(`
+	result, err := this.db.Exec(`
         DELETE
         FROM artist
         WHERE id = ?
     `, artist.Id)
 
-    if err != nil {
-        return 0, err
-    }
-    return result.RowsAffected()
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
 }
 
 func (this artistDao) Save(artist model.Artist) (int64, error) {
-    result, err := this.db.Exec(`
+	result, err := this.db.Exec(`
         INSERT INTO artist(
             id,
             name
@@ -97,12 +97,12 @@ func (this artistDao) Save(artist model.Artist) (int64, error) {
         ON DUPLICATE KEY UPDATE
             name = VALUES(name)
     `,
-        artist.Id,
-        artist.Name,
-    )
+		artist.Id,
+		artist.Name,
+	)
 
-    if err != nil {
-        return 0, err
-    }
-    return result.LastInsertId()
+	if err != nil {
+		return 0, err
+	}
+	return result.LastInsertId()
 }

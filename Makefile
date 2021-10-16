@@ -1,9 +1,12 @@
-.PHONY: all covtest
+.PHONY: all covtest fmt
 
-TAGS:="config,-integration"
+TAGS:="-integration"
 
 all: test vet
 	go build src/main.go
+
+fmt:
+	go fmt ./...
 
 vet:
 	go vet ./...
@@ -19,6 +22,9 @@ covreport: covtest
 
 intgtest: mock
 	./bin/intgtest.sh
+
+intgtestreport: intgtest
+	go tool cover -html=coverage.out
 
 mock:
 	./bin/mocks.sh
