@@ -45,10 +45,21 @@ func (this DatabaseClient) Migrate(migrationsPath string) {
 }
 
 func (this DatabaseClient) Close() {
-	this.Artist.Close()
-	this.Album.Close()
-	this.Track.Close()
-	this.db.Close()
+	if this.Artist != nil {
+		this.Artist.Close()
+	}
+
+	if this.Album != nil {
+		this.Album.Close()
+	}
+
+	if this.Track != nil {
+		this.Track.Close()
+	}
+
+	if this.db != nil {
+		this.db.Close()
+	}
 }
 
 func getConnectionString(cfg config.Config) string {
