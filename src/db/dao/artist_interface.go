@@ -20,7 +20,7 @@ type ArtistDao interface {
 
 	   Returns nil if no artist is found
 	*/
-	Load(uint64) *model.Artist
+	Load(int64) *model.Artist
 
 	/*
 	   Save an artist via upsert.

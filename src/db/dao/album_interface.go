@@ -19,7 +19,7 @@ type AlbumDao interface {
 	   Load a single album based on id, will return nil if the album cannot be
 	   found.
 	*/
-	Load(uint64) *model.Album
+	Load(int64) *model.Album
 
 	/*
 	   Save an album. This should perform an upsert style insert or update to an

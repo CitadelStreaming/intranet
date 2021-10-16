@@ -39,7 +39,7 @@ func TestArtistDao(t *testing.T) {
 		WillReturnResult(sqlmock.NewResult(1, 1))
 
 	mockRows := sqlmock.NewRows([]string{"id", "name"}).
-		AddRow(uint64(1), "James")
+		AddRow(int64(1), "James")
 	mock.ExpectQuery(`
         SELECT
             \*
@@ -64,7 +64,7 @@ func TestArtistDao(t *testing.T) {
 	assert.Nil(err)
 	assert.Equal(int64(1), rows)
 
-	result := dao.Load(uint64(1))
+	result := dao.Load(int64(1))
 	assert.NotNil(result)
 	assert.Equal(artist.Name, result.Name)
 
@@ -95,7 +95,7 @@ func TestArtistDaoLoadError(t *testing.T) {
 	dao := mysql.NewArtistDao(db)
 	defer dao.Close()
 
-	result := dao.Load(uint64(1))
+	result := dao.Load(int64(1))
 	assert.Nil(result)
 
 	assert.Nil(mock.ExpectationsWereMet())
@@ -230,9 +230,9 @@ func TestArtistDaoLoadAll(t *testing.T) {
 	defer db.Close()
 
 	mockRows := sqlmock.NewRows([]string{"id", "name"}).
-		AddRow(uint64(1), "James").
-		AddRow(uint64(2), "Bobby").
-		AddRow(uint64(3), "Frank").
+		AddRow(int64(1), "James").
+		AddRow(int64(2), "Bobby").
+		AddRow(int64(3), "Frank").
 		RowError(1, errors.New("Keep him away from the tables!"))
 	mock.ExpectQuery(`
         SELECT

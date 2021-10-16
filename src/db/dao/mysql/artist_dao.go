@@ -23,7 +23,7 @@ func (this artistDao) Close() {
 	logrus.Debug("Closing Album DAO")
 }
 
-func (this artistDao) Load(id uint64) *model.Artist {
+func (this artistDao) Load(id int64) *model.Artist {
 	var artist *model.Artist = &model.Artist{}
 
 	row := this.db.QueryRow(`

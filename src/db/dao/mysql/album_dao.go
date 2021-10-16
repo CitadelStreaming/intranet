@@ -27,7 +27,7 @@ func (this albumDao) Close() {
 	logrus.Debug("Closing Album DAO")
 }
 
-func (this albumDao) loadArtistAndTracksForAlbum(album *model.Album, artistId uint64) {
+func (this albumDao) loadArtistAndTracksForAlbum(album *model.Album, artistId int64) {
 	artist := this.artistDao.Load(artistId)
 	if artist == nil {
 		logrus.Error("Unable to find artist with ID=", artistId)
@@ -38,7 +38,7 @@ func (this albumDao) loadArtistAndTracksForAlbum(album *model.Album, artistId ui
 	album.Tracks = this.trackDao.LoadForAlbum(album.Id)
 }
 
-func (this albumDao) Load(id uint64) *model.Album {
+func (this albumDao) Load(id int64) *model.Album {
 	var album *model.Album = &model.Album{}
 
 	row := this.db.QueryRow(`
@@ -48,7 +48,7 @@ func (this albumDao) Load(id uint64) *model.Album {
         WHERE id = ?
     `, id)
 
-	var artistId uint64
+	var artistId int64
 	err := row.Scan(&album.Id, &album.Title, &artistId, &album.Published, &album.Rating)
 
 	if err != nil {
@@ -75,7 +75,7 @@ func (this albumDao) LoadAll() []model.Album {
 		return nil
 	}
 
-	var artistId uint64
+	var artistId int64
 	for rows.Next() {
 		var album model.Album
 		err := rows.Scan(&album.Id, &album.Title, &artistId, &album.Published, &album.Rating)

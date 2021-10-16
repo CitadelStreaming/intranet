@@ -48,7 +48,7 @@ func TestTrackDao(t *testing.T) {
 		WillReturnResult(sqlmock.NewResult(1, 1))
 
 	mockRows := sqlmock.NewRows([]string{"id", "title", "album", "rating"}).
-		AddRow(uint64(456), "Something Awesome", uint64(123), uint(5))
+		AddRow(int64(456), "Something Awesome", int64(123), uint(5))
 	mock.ExpectQuery(`
         SELECT
             \*
@@ -73,7 +73,7 @@ func TestTrackDao(t *testing.T) {
 	assert.Nil(err)
 	assert.Equal(int64(1), rows)
 
-	result := dao.Load(uint64(456))
+	result := dao.Load(int64(456))
 	assert.NotNil(result)
 	assert.Equal(track.Title, result.Title)
 	assert.Equal(track.AlbumId, result.AlbumId)
@@ -95,9 +95,9 @@ func TestTrackDaoLoadForAlbum(t *testing.T) {
 	defer db.Close()
 
 	mockRows := sqlmock.NewRows([]string{"id", "title", "album", "rating"}).
-		AddRow(uint64(457), "Track 1", uint64(123), uint(5)).
-		AddRow(uint64(456), "Track 2", uint64(123), uint(5)).
-		AddRow(uint64(458), "Track 3", uint64(123), uint(5))
+		AddRow(int64(457), "Track 1", int64(123), uint(5)).
+		AddRow(int64(456), "Track 2", int64(123), uint(5)).
+		AddRow(int64(458), "Track 3", int64(123), uint(5))
 	mock.ExpectQuery(`
         SELECT
             \*
@@ -110,7 +110,7 @@ func TestTrackDaoLoadForAlbum(t *testing.T) {
 	dao := mysql.NewTrackDao(db)
 	defer dao.Close()
 
-	result := dao.LoadForAlbum(uint64(1))
+	result := dao.LoadForAlbum(int64(1))
 	assert.Len(result, 3)
 
 	assert.Nil(mock.ExpectationsWereMet())
@@ -136,7 +136,7 @@ func TestTrackDaoLoadForAlbumError(t *testing.T) {
 	dao := mysql.NewTrackDao(db)
 	defer dao.Close()
 
-	result := dao.LoadForAlbum(uint64(1))
+	result := dao.LoadForAlbum(int64(1))
 	assert.Nil(result)
 
 	assert.Nil(mock.ExpectationsWereMet())
@@ -162,7 +162,7 @@ func TestTrackDaoLoadError(t *testing.T) {
 	dao := mysql.NewTrackDao(db)
 	defer dao.Close()
 
-	result := dao.Load(uint64(1))
+	result := dao.Load(int64(1))
 	assert.Nil(result)
 
 	assert.Nil(mock.ExpectationsWereMet())
@@ -275,7 +275,7 @@ func TestTrackDaoLoadAllScanError(t *testing.T) {
 	defer db.Close()
 
 	mockRows := sqlmock.NewRows([]string{"id", "title", "album", "rating"}).
-		AddRow("cat", "Track 1", uint64(123), uint(5))
+		AddRow("cat", "Track 1", int64(123), uint(5))
 	mock.ExpectQuery(`
         SELECT
             \*
@@ -301,9 +301,9 @@ func TestTrackDaoLoadAll(t *testing.T) {
 	defer db.Close()
 
 	mockRows := sqlmock.NewRows([]string{"id", "title", "album", "rating"}).
-		AddRow(uint64(457), "Track 1", uint64(123), uint(5)).
-		AddRow(uint64(456), "Track 2", uint64(123), uint(5)).
-		AddRow(uint64(458), "Track 3", uint64(123), uint(5))
+		AddRow(int64(457), "Track 1", int64(123), uint(5)).
+		AddRow(int64(456), "Track 2", int64(123), uint(5)).
+		AddRow(int64(458), "Track 3", int64(123), uint(5))
 	mock.ExpectQuery(`
         SELECT
             \*

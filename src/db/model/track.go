@@ -1,8 +1,8 @@
 package model
 
 type Track struct {
-	Id      uint64
+	Id      int64
 	Title   string
-	AlbumId uint64
+	AlbumId int64
 	Rating  uint
 }

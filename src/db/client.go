@@ -26,7 +26,7 @@ type DatabaseClient interface {
 	Close()
 }
 
-func NewDatabaseClient(cfg config.Config) DatabaseClient {
+func NewDatabaseClient(cfg config.Config) databaseClient {
 	db, err := sql.Open("mysql", getConnectionString(cfg))
 	if err != nil {
 		logrus.Panic("Unable to connect to database: ", err.Error())

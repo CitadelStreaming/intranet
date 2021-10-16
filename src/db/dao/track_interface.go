@@ -17,12 +17,12 @@ type TrackDao interface {
 
 	   Returns nil if no track is found
 	*/
-	Load(uint64) *model.Track
+	Load(int64) *model.Track
 
 	/*
 	   Load all tracks associated with an album id.
 	*/
-	LoadForAlbum(uint64) []model.Track
+	LoadForAlbum(int64) []model.Track
 
 	/*
 	   Save an track via upsert.

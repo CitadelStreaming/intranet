@@ -40,7 +40,7 @@ func (this trackDao) scanAll(rows *sql.Rows) []model.Track {
 	return ret
 }
 
-func (this trackDao) LoadForAlbum(id uint64) []model.Track {
+func (this trackDao) LoadForAlbum(id int64) []model.Track {
 	rows, err := this.db.Query(`
         SELECT
             *
@@ -56,7 +56,7 @@ func (this trackDao) LoadForAlbum(id uint64) []model.Track {
 	return this.scanAll(rows)
 }
 
-func (this trackDao) Load(id uint64) *model.Track {
+func (this trackDao) Load(id int64) *model.Track {
 	var track *model.Track = &model.Track{}
 
 	row := this.db.QueryRow(`

@@ -31,7 +31,7 @@ func TestAlbumDaoLoadError(t *testing.T) {
 	dao := mysql.NewAlbumDao(db, nil, nil)
 	defer dao.Close()
 
-	result := dao.Load(uint64(1))
+	result := dao.Load(int64(1))
 	assert.Nil(result)
 
 	assert.Nil(mock.ExpectationsWereMet())
@@ -60,8 +60,8 @@ func TestAlbumDaoLoad(t *testing.T) {
     `).WithArgs(1).WillReturnRows(mockRows)
 
 	mockArtistDao.EXPECT().
-		Load(gomock.Eq(uint64(42))).
-		DoAndReturn(func(id uint64) *model.Artist {
+		Load(gomock.Eq(int64(42))).
+		DoAndReturn(func(id int64) *model.Artist {
 			return &model.Artist{
 				Id:   id,
 				Name: "Bobby",
@@ -69,16 +69,16 @@ func TestAlbumDaoLoad(t *testing.T) {
 		}).Times(1)
 
 	mockTrackDao.EXPECT().
-		LoadForAlbum(gomock.Eq(uint64(1))).
-		DoAndReturn(func(_ uint64) []model.Track {
+		LoadForAlbum(gomock.Eq(int64(1))).
+		DoAndReturn(func(_ int64) []model.Track {
 			return []model.Track{}
 		}).Times(1)
 
-	album := dao.Load(uint64(1))
+	album := dao.Load(int64(1))
 	assert.NotNil(album)
 
-	assert.Equal(uint64(1), album.Id)
-	assert.Equal(uint64(42), album.Artist.Id)
+	assert.Equal(int64(1), album.Id)
+	assert.Equal(int64(42), album.Artist.Id)
 	assert.Equal("Bobby", album.Artist.Name)
 	assert.Equal("Waffle Irons", album.Title)
 	assert.Equal(false, album.Published)
@@ -110,22 +110,22 @@ func TestAlbumDaoLoadNoArtist(t *testing.T) {
     `).WithArgs(1).WillReturnRows(mockRows)
 
 	mockArtistDao.EXPECT().
-		Load(gomock.Eq(uint64(42))).
-		DoAndReturn(func(id uint64) *model.Artist {
+		Load(gomock.Eq(int64(42))).
+		DoAndReturn(func(id int64) *model.Artist {
 			return nil
 		}).Times(1)
 
 	mockTrackDao.EXPECT().
-		LoadForAlbum(gomock.Eq(uint64(1))).
-		DoAndReturn(func(_ uint64) []model.Track {
+		LoadForAlbum(gomock.Eq(int64(1))).
+		DoAndReturn(func(_ int64) []model.Track {
 			return []model.Track{}
 		}).Times(1)
 
-	album := dao.Load(uint64(1))
+	album := dao.Load(int64(1))
 	assert.NotNil(album)
 
-	assert.Equal(uint64(1), album.Id)
-	assert.Equal(uint64(0), album.Artist.Id)
+	assert.Equal(int64(1), album.Id)
+	assert.Equal(int64(0), album.Artist.Id)
 	assert.Equal("", album.Artist.Name)
 	assert.Equal("Waffle Irons", album.Title)
 	assert.Equal(false, album.Published)
@@ -316,8 +316,8 @@ func TestAlbumDaoLoadAll(t *testing.T) {
 		WillReturnRows(mockRows)
 
 	mockArtistDao.EXPECT().
-		Load(gomock.Eq(uint64(42))).
-		DoAndReturn(func(id uint64) *model.Artist {
+		Load(gomock.Eq(int64(42))).
+		DoAndReturn(func(id int64) *model.Artist {
 			return &model.Artist{
 				Id:   id,
 				Name: "Bobby",
@@ -327,8 +327,8 @@ func TestAlbumDaoLoadAll(t *testing.T) {
 
 	for i := 1; i < 4; i++ {
 		mockTrackDao.EXPECT().
-			LoadForAlbum(gomock.Eq(uint64(i))).
-			DoAndReturn(func(_ uint64) []model.Track {
+			LoadForAlbum(gomock.Eq(int64(i))).
+			DoAndReturn(func(_ int64) []model.Track {
 				return []model.Track{}
 			}).Times(1)
 	}
@@ -346,8 +346,8 @@ func TestAlbumDaoLoadAll(t *testing.T) {
 		{"Something New (Deluxe)", true, 5},
 	} {
 		album := albums[index]
-		assert.Equal(uint64(index+1), album.Id)
-		assert.Equal(uint64(42), album.Artist.Id)
+		assert.Equal(int64(index+1), album.Id)
+		assert.Equal(int64(42), album.Artist.Id)
 		assert.Equal("Bobby", album.Artist.Name)
 		assert.Equal(row.Title, album.Title)
 		assert.Equal(row.Published, album.Published)
@@ -391,9 +391,9 @@ func disableTestAlbumDaoLoadAll(t *testing.T) {
 	defer db.Close()
 
 	mockRows := sqlmock.NewRows([]string{"id", "title"}).
-		AddRow(uint64(1), "Album 1").
-		AddRow(uint64(2), "Little Bobby Tables").
-		AddRow(uint64(3), "Album 42").
+		AddRow(int64(1), "Album 1").
+		AddRow(int64(2), "Little Bobby Tables").
+		AddRow(int64(3), "Album 42").
 		RowError(1, errors.New("Keep him away from the tables!"))
 	mock.ExpectQuery(`
         SELECT
