@@ -21,6 +21,7 @@ func TestLoadConfigEmpty(t *testing.T) {
 
 	assert.Equal("localhost", cfg.ServerHost)
 	assert.Equal(uint16(8080), cfg.ServerPort)
+	assert.Equal("/var/www", cfg.ServerFilePath)
 
 	assert.Equal("/var/migrations", cfg.MigrationsPath)
 }
@@ -36,6 +37,7 @@ func TestLoadConfigSetValues(t *testing.T) {
 
 	assert.Nil(os.Setenv(config.ENV_SERVER_HOST, "webserver.local"))
 	assert.Nil(os.Setenv(config.ENV_SERVER_PORT, "80"))
+	assert.Nil(os.Setenv(config.ENV_SERVER_PATH, "/var/www/site1"))
 
 	assert.Nil(os.Setenv(config.ENV_MIGRATIONS_PATH, "/opt/citadel/migrations"))
 
@@ -49,6 +51,7 @@ func TestLoadConfigSetValues(t *testing.T) {
 
 	assert.Equal("webserver.local", cfg.ServerHost)
 	assert.Equal(uint16(80), cfg.ServerPort)
+	assert.Equal("/var/www/site1", cfg.ServerFilePath)
 
 	assert.Equal("/opt/citadel/migrations", cfg.MigrationsPath)
 }
@@ -64,6 +67,7 @@ func TestLoadConfigSetValuesInvalidPort(t *testing.T) {
 
 	assert.Nil(os.Setenv(config.ENV_SERVER_HOST, "webserver.local"))
 	assert.Nil(os.Setenv(config.ENV_SERVER_PORT, "waggles"))
+	assert.Nil(os.Setenv(config.ENV_SERVER_PATH, "/var/www/site1"))
 
 	assert.Nil(os.Setenv(config.ENV_MIGRATIONS_PATH, "/var/migrations"))
 
@@ -77,6 +81,7 @@ func TestLoadConfigSetValuesInvalidPort(t *testing.T) {
 
 	assert.Equal("webserver.local", cfg.ServerHost)
 	assert.Equal(uint16(8080), cfg.ServerPort)
+	assert.Equal("/var/www/site1", cfg.ServerFilePath)
 
 	assert.Equal("/var/migrations", cfg.MigrationsPath)
 }
