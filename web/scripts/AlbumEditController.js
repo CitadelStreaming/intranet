@@ -39,6 +39,12 @@ export class AlbumEditController
 
     _saveAlbum(album)
     {
+        if (!album.title || album.title == "" || !album.artist || !album.artist.name || album.artist.name == "")
+        {
+            console.log("Malformed album");
+            return;
+        }
+
         const that = this;
         const json = JSON.stringify(album);
         let uri = "/api/v1/album";
@@ -58,6 +64,12 @@ export class AlbumEditController
         })
             .then(function(response)
             {
+                if (method == "PUT" && response.ok)
+                {
+                    return new Promise((kept, broken) => {
+                        kept(album);
+                    });
+                }
                 return response.json();
             })
             .then(function(data)

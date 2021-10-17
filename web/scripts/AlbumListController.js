@@ -1,3 +1,5 @@
+import {AlbumEditController} from "./AlbumEditController.js";
+
 export class AlbumListController
 {
     constructor(selector)
@@ -134,7 +136,13 @@ export class AlbumListController
             let item = document.createElement("div");
             item.classList.add("album");
             item.setAttribute("data-album", JSON.stringify(album));
-            item.appendChild(document.createElement("h2")).textContent = album.title;
+            
+            let title = document.createElement("h2");
+            item.appendChild(title).textContent = album.title;
+            title.addEventListener("dblclick", function(e)
+            {
+                const editor = new AlbumEditController(album);
+            });
 
             let byline = document.createElement("span");
             item.appendChild(byline).appendChild(document.createTextNode(" by "));

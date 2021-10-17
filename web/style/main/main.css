@@ -7,6 +7,7 @@ body {
     padding: 0px;
     margin: 0px;
     background: #333;
+    font-size: 14pt;
 }
 
 h1 {
@@ -112,10 +113,24 @@ input:invalid {
     -webkit-backdrop-filter: blur(5px);
 }
 
-.modal div {
+.modal > div {
     width: 1000px;
     min-height: 300px;
     border-radius: 5px;
     background: #666;
     padding: 10px;
+}
+
+.save {
+    background: #69f;
+    border-radius: 2px;
+    border: none;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 150ms;
+}
+
+.save:hover {
+    background: #9cf;
+    filter: drop-shadow(5px 5px 2px rgba(50, 50, 50, .7));
 }
