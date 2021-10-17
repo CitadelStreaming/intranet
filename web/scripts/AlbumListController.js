@@ -8,6 +8,11 @@ export class AlbumListController
         this._albums = [];
         this._request = new Request("/api/v1/album");
 
+        const that = this;
+        document.body.addEventListener("reloadAlbums", function()
+        {
+            that._loadAllAlbums();
+        });
         this._loadAllAlbums();
     }
 
@@ -60,7 +65,7 @@ export class AlbumListController
         fetch(new Request("/api/v1/album/" + album.id), {
             method: "PUT",
             headers: {
-                "ContentType": "application/json"
+                "Content-Type": "application/json"
             },
             body: json
         })
@@ -131,6 +136,8 @@ export class AlbumListController
     {
         const that = this;
         let container = document.querySelector(this._selector);
+        container.innerHTML = "";
+
         for (const album of this._albums)
         {
             let item = document.createElement("div");
@@ -139,7 +146,7 @@ export class AlbumListController
             
             let title = document.createElement("h2");
             item.appendChild(title).textContent = album.title;
-            title.addEventListener("dblclick", function(e)
+            title.addEventListener("click", function(e)
             {
                 const editor = new AlbumEditController(album);
             });

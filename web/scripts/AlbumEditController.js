@@ -9,6 +9,8 @@ export class AlbumEditController
 
     _closeAllModals()
     {
+        const e = new CustomEvent("reloadAlbums", {});
+        document.body.dispatchEvent(e);
         document.querySelectorAll(".modal").forEach(function(item)
         {
             item.parentNode.removeChild(item);
@@ -37,6 +39,41 @@ export class AlbumEditController
             .catch(console.error);
     }
 
+    _deleteAlbum(album)
+    {
+        const that = this;
+        const json = JSON.stringify(album);
+
+        fetch(new Request("/api/v1/album/" + album.id), {
+            method: "DELETE",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: json
+        })
+            .then(function(response)
+            {
+                if (response.ok)
+                {
+                    return new Promise((kept, broken) => {
+                        kept(album);
+                    });
+                }
+                return response.json();
+            })
+            .then(function(data)
+            {
+                that._closeAllModals();
+                if (data.error === undefined)
+                {
+                    return;
+                }
+
+                console.error("Encountered a problem: " + data);
+            })
+            .catch(console.error);
+    }
+
     _saveAlbum(album)
     {
         if (!album.title || album.title == "" || !album.artist || !album.artist.name || album.artist.name == "")
@@ -58,7 +95,7 @@ export class AlbumEditController
         fetch(new Request(uri), {
             method: method,
             headers: {
-                "ContentType": "application/json"
+                "Content-Type": "application/json"
             },
             body: json
         })
@@ -115,9 +152,29 @@ export class AlbumEditController
 
         this._displayArtistList(body, artistList);
         this._displayTracks(body);
+        this._displayDeleteButton(body);
         this._displaySaveButton(body);
 
         document.body.appendChild(container);
+    }
+
+    _displayDeleteButton(body)
+    {
+        if (!this._album.id || this._album.id == 0)
+        {
+            return;
+        }
+
+        const that = this;
+        let del = document.createElement("button");
+        del.classList.add("delete");
+        del.textContent = "Delete";
+        del.addEventListener("click", function(e)
+        {
+            that._deleteAlbum(that._album);
+        });
+
+        body.appendChild(del);
     }
 
     _displaySaveButton(body)
@@ -208,6 +265,7 @@ export class AlbumEditController
     
     _addNewTrackButton(body)
     {
+        const that = this;
         if (this._album.id && this._album.id > 0)
         {
             let t = document.createElement("div");
@@ -216,9 +274,66 @@ export class AlbumEditController
 
             t.addEventListener("click", function(e)
             {
+                const id = that._album.id;
+                console.log("Starting new track addition for album ", id);
+
+                let newTrack = document.createElement("div");
+                newTrack.classList.add("track");
+
+                let input = document.createElement("input");
+                input.setAttribute("type", "text");
+                input.setAttribute("placeholder", "Track Title");
+
+                input.addEventListener("blur", function(e)
+                {
+                    const value = this.value;
+                    if (value == "")
+                    {
+                        newTrack.parentNode.removeChild(newTrack);
+                        return;
+                    }
+
+                    that._saveTrack(id, value, newTrack);
+                });
+
+                newTrack.appendChild(input);
+                t.parentNode.insertBefore(newTrack, t);
+                input.focus();
             });
 
             body.appendChild(t);
         }
+    }
+
+    _saveTrack(albumId, trackTitle, trackEle)
+    {
+        const json = JSON.stringify({
+            title: trackTitle,
+            album: albumId
+        });
+        console.log("Saving track", json);
+
+        fetch(new Request("/api/v1/track"), {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: json
+        })
+            .then(function(response)
+            {
+                return response.json();
+            })
+            .then(function(data)
+            {
+                if (data.error === undefined)
+                {
+                    trackEle.textContent = trackTitle;
+                    return;
+                }
+
+                console.error("Encountered a problem: " + data);
+            })
+            .catch(console.error);
     }
 }
