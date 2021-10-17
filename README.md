@@ -27,6 +27,18 @@ or writing) are:
 
 Run through tests, vet, and finally build the intranet application.
 
+### `citadel_intranet`
+
+The main executable.
+
+### `deployment_executable`
+
+Minimize the main executable.
+
+### `docker_image`
+
+Create a docker image for the intranet.
+
 ### `fmt`
 
 Run the go formatter.
