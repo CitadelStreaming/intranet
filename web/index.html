@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Citadel Streaming Intranet</title>
+        <link href="style/main/main.css" rel="stylesheet" type="text/css" />
+
+        <script type="module">
+            import {Application} from "./scripts/Application.js";
+
+            document.addEventListener("DOMContentLoaded", function()
+            {
+                const app = new Application("#albumList");
+            });
+        </script>
+    </head>
+    <body>
+        <header>
+            <h1>
+                🎜 Citadel Streaming Intranet
+            </h1>
+        </header>
+        <section id="albumList">
+        </section>
+        <footer>
+            (Eventually, a track playback panel will go here)
+        </footer>
+    </body>
+</html>

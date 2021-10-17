@@ -1,0 +1,90 @@
+* {
+    box-sizing: border-box;
+    vertical-align: baseline;
+}
+
+body {
+    padding: 0px;
+    margin: 0px;
+    background: #333;
+}
+
+h1 {
+    font-family: Serif;
+    padding: 5px;
+    margin: 0px;
+}
+
+header {
+    background: #666;
+    border-bottom: 2px solid #000;
+    margin: 0px 0px 5px 0px;
+}
+
+footer {
+    position: fixed;
+    bottom: 0px;
+    left: 0px;
+    right: 0px;
+    padding: 5px;
+    background: #666;
+    height: 50px;
+    border-top: 2px solid #000;
+}
+
+#albumList {
+    max-width: 1000px;
+    background: #666;
+    padding: 0px;
+    margin: 0px auto;
+}
+
+.album {
+    padding: 5px;
+}
+
+.album:nth-child(even) {
+    background: #777;
+}
+
+.album h2 {
+    margin: 0px;
+    font-size: 18pt;
+    font-family: Sans;
+    cursor: pointer;
+}
+
+.album h2:hover {
+    color: #ccc;
+}
+
+.album em {
+    cursor: pointer;
+}
+
+.album em:hover {
+    color: #ccc;
+}
+
+.addButton {
+    display: block;
+    position: fixed;
+    font-size: 28pt;
+    bottom: 25px;
+    right: 25px;
+    height: 50px;
+    width: 50px;
+    border-radius: 100%;
+    border: 1px solid #ccc;
+    background: #777;
+    color: #eee;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 150ms;
+}
+
+.addButton:hover {
+    background: #696;
+    border-color: #9c9;
+    filter: drop-shadow(5px 5px 2px rgba(50, 50, 50, .7));
+}
