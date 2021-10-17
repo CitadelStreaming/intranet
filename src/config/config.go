@@ -43,7 +43,7 @@ type Config struct {
 Load a configuration from environment variables, providing default values
 */
 func LoadConfig() Config {
-	return Config{
+	cfg := Config{
 		DbHost: getEnvStringWithDefault(ENV_DATABASE_HOST, "localhost"),
 		DbUser: getEnvStringWithDefault(ENV_DATABASE_USER, ""),
 		DbPass: getEnvStringWithDefault(ENV_DATABASE_PASS, ""),
@@ -56,6 +56,19 @@ func LoadConfig() Config {
 
 		MigrationsPath: getEnvStringWithDefault(ENV_MIGRATIONS_PATH, "/var/migrations"),
 	}
+
+	logrus.WithFields(logrus.Fields{
+		ENV_DATABASE_HOST:   cfg.DbHost,
+		ENV_DATABASE_NAME:   cfg.DbName,
+		ENV_DATABASE_PORT:   cfg.DbPort,
+		ENV_DATABASE_USER:   cfg.DbUser,
+		ENV_DATABASE_PASS:   "*****",
+		ENV_SERVER_HOST:     cfg.ServerHost,
+		ENV_SERVER_PORT:     cfg.ServerPort,
+		ENV_SERVER_PATH:     cfg.ServerFilePath,
+		ENV_MIGRATIONS_PATH: cfg.MigrationsPath,
+	}).Info("Configuration info loaded")
+	return cfg
 }
 
 func getEnvStringWithDefault(key string, defaultValue string) string {

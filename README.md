@@ -4,6 +4,19 @@ The intranet site for Citadel Streaming, meant to provide an easy interface to
 start putting together new albums, collaborate on naming and track thoughts, and
 see everything come together before publishing the album.
 
+## Environment Variables
+ 
+* `SECRET_LOCATION` **Unused**
+* `DB_HOST` The hostname or IP address for the database.
+* `DB_PORT` Port number for the database.
+* `DB_NAME` The name of the database to use.
+* `DB_USER` Username for the database.
+* `DB_PASS` Password for the database.
+* `SERVER_HOST` The hostname to use for the server (where we should bind to).
+* `SERVER_PORT` The port number to serve on.
+* `SERVER_PATH` The location to serve static files from.
+* `MIGRATIONS` The location to look for database migrations in.
+
 ## Building, testing, and more
 
 Everything is currently done via `make`, each of the targets are there to make
