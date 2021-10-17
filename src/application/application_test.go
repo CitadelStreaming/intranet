@@ -20,6 +20,7 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
 )
 
 const (
@@ -133,15 +134,26 @@ func TestGetAlbums(t *testing.T) {
 	assert.Equal(ExpectedJsonForGetAlbums, string(body))
 }
 
-func TestCreateAlbum(t *testing.T) {
-	assert := assert.New(t)
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+type AppSuite struct {
+	suite.Suite
+	ctrl *gomock.Controller
+	cfg  config.Config
+}
 
-	cfg := config.Config{
+func TestAppSuite(t *testing.T) {
+	suite.Run(t, new(AppSuite))
+}
+
+func (suite *AppSuite) SetupTest() {
+	suite.ctrl = gomock.NewController(suite.T())
+	suite.cfg = config.Config{
 		ServerHost: "",
 		ServerPort: 8080,
 	}
+}
+
+func (suite *AppSuite) TestCreateAlbum() {
+	defer suite.ctrl.Finish()
 
 	album := model.Album{
 		Title: "Something Wicked This Way Comes",
@@ -153,49 +165,42 @@ func TestCreateAlbum(t *testing.T) {
 		Rating:    0,
 	}
 
-	mockAlbumDao := mock.NewMockAlbumDao(ctrl)
+	mockAlbumDao := mock.NewMockAlbumDao(suite.ctrl)
 	mockAlbumDao.EXPECT().
 		Save(gomock.Eq(album)).
 		Return(int64(1), nil).
 		Times(1)
 	mockAlbumDao.EXPECT().Close().Times(1)
 
-	server := server.NewServer(cfg)
+	server := server.NewServer(suite.cfg)
 	dbClient := db.DatabaseClient{
 		Album: mockAlbumDao,
 	}
 
 	app := application.NewApp(dbClient, server)
-	assert.NotNil(app)
+	suite.NotNil(app)
 	defer app.Close()
 	app.Run()
 
 	body, err := json.Marshal(album)
-	assert.Nil(err)
+	suite.Nil(err)
 
 	buffer := bytes.NewBuffer(body)
 	resp, err := http.Post("http://localhost:8080/api/v1/album", "application/json", buffer)
-	assert.Nil(err)
+	suite.Nil(err)
 	defer resp.Body.Close()
 
 	album.Id = 1
 	body, err = json.Marshal(album)
-	assert.Nil(err)
+	suite.Nil(err)
 
 	retBody, err := ioutil.ReadAll(resp.Body)
-	assert.Nil(err)
-	assert.Equal(string(body), string(retBody))
+	suite.Nil(err)
+	suite.Equal(string(body), string(retBody))
 }
 
-func TestCreateAlbumBadArtist(t *testing.T) {
-	assert := assert.New(t)
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	cfg := config.Config{
-		ServerHost: "",
-		ServerPort: 8080,
-	}
+func (suite *AppSuite) TestCreateAlbumBadArtist() {
+	defer suite.ctrl.Finish()
 
 	album := model.Album{
 		Title:     "Something Wicked This Way Comes",
@@ -204,42 +209,35 @@ func TestCreateAlbumBadArtist(t *testing.T) {
 		Rating:    0,
 	}
 
-	mockAlbumDao := mock.NewMockAlbumDao(ctrl)
+	mockAlbumDao := mock.NewMockAlbumDao(suite.ctrl)
 	mockAlbumDao.EXPECT().Close().Times(1)
 
-	server := server.NewServer(cfg)
+	server := server.NewServer(suite.cfg)
 	dbClient := db.DatabaseClient{
 		Album: mockAlbumDao,
 	}
 
 	app := application.NewApp(dbClient, server)
-	assert.NotNil(app)
+	suite.NotNil(app)
 	defer app.Close()
 	app.Run()
 
 	body, err := json.Marshal(album)
-	assert.Nil(err)
+	suite.Nil(err)
 
 	buffer := bytes.NewBuffer(body)
 	resp, err := http.Post("http://localhost:8080/api/v1/album", "application/json", buffer)
-	assert.Nil(err)
-	assert.Equal(http.StatusBadRequest, resp.StatusCode)
+	suite.Nil(err)
+	suite.Equal(http.StatusBadRequest, resp.StatusCode)
 	defer resp.Body.Close()
 
 	retBody, err := ioutil.ReadAll(resp.Body)
-	assert.Nil(err)
-	assert.Equal("{\"error\":\"Invalid album artist provided. Name cannot be empty when inserting an artist.\"}", string(retBody))
+	suite.Nil(err)
+	suite.Equal("{\"error\":\"Invalid album artist provided. Name cannot be empty when inserting an artist.\"}", string(retBody))
 }
 
-func TestCreateAlbumNewArtist(t *testing.T) {
-	assert := assert.New(t)
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	cfg := config.Config{
-		ServerHost: "",
-		ServerPort: 8080,
-	}
+func (suite *AppSuite) TestCreateAlbumNewArtist() {
+	defer suite.ctrl.Finish()
 
 	album := model.Album{
 		Title: "Something Wicked This Way Comes",
@@ -259,58 +257,51 @@ func TestCreateAlbumNewArtist(t *testing.T) {
 		Rating:    0,
 	}
 
-	mockArtistDao := mock.NewMockArtistDao(ctrl)
+	mockArtistDao := mock.NewMockArtistDao(suite.ctrl)
 	mockArtistDao.EXPECT().
 		Save(gomock.Eq(album.Artist)).
 		Return(int64(42), nil).
 		Times(1)
 	mockArtistDao.EXPECT().Close().Times(1)
 
-	mockAlbumDao := mock.NewMockAlbumDao(ctrl)
+	mockAlbumDao := mock.NewMockAlbumDao(suite.ctrl)
 	mockAlbumDao.EXPECT().
 		Save(gomock.Eq(albumPostEdit)).
 		Return(int64(1), nil).
 		Times(1)
 	mockAlbumDao.EXPECT().Close().Times(1)
 
-	server := server.NewServer(cfg)
+	server := server.NewServer(suite.cfg)
 	dbClient := db.DatabaseClient{
 		Album:  mockAlbumDao,
 		Artist: mockArtistDao,
 	}
 
 	app := application.NewApp(dbClient, server)
-	assert.NotNil(app)
+	suite.NotNil(app)
 	defer app.Close()
 	app.Run()
 
 	body, err := json.Marshal(album)
-	assert.Nil(err)
+	suite.Nil(err)
 
 	buffer := bytes.NewBuffer(body)
 	resp, err := http.Post("http://localhost:8080/api/v1/album", "application/json", buffer)
-	assert.Nil(err)
-	assert.Equal(http.StatusCreated, resp.StatusCode)
+	suite.Nil(err)
+	suite.Equal(http.StatusCreated, resp.StatusCode)
 	defer resp.Body.Close()
 
 	albumPostEdit.Id = 1
 	body, err = json.Marshal(albumPostEdit)
-	assert.Nil(err)
+	suite.Nil(err)
 
 	retBody, err := ioutil.ReadAll(resp.Body)
-	assert.Nil(err)
-	assert.Equal(string(body), string(retBody))
+	suite.Nil(err)
+	suite.Equal(string(body), string(retBody))
 }
 
-func TestCreateAlbumNewArtistError(t *testing.T) {
-	assert := assert.New(t)
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	cfg := config.Config{
-		ServerHost: "",
-		ServerPort: 8080,
-	}
+func (suite *AppSuite) TestCreateAlbumNewArtistError() {
+	defer suite.ctrl.Finish()
 
 	album := model.Album{
 		Title: "Something Wicked This Way Comes",
@@ -321,50 +312,43 @@ func TestCreateAlbumNewArtistError(t *testing.T) {
 		Rating:    0,
 	}
 
-	mockArtistDao := mock.NewMockArtistDao(ctrl)
+	mockArtistDao := mock.NewMockArtistDao(suite.ctrl)
 	mockArtistDao.EXPECT().
 		Save(gomock.Eq(album.Artist)).
 		Return(int64(0), errors.New("Something went bad with the artist")).
 		Times(1)
 	mockArtistDao.EXPECT().Close().Times(1)
 
-	mockAlbumDao := mock.NewMockAlbumDao(ctrl)
+	mockAlbumDao := mock.NewMockAlbumDao(suite.ctrl)
 	mockAlbumDao.EXPECT().Close().Times(1)
 
-	server := server.NewServer(cfg)
+	server := server.NewServer(suite.cfg)
 	dbClient := db.DatabaseClient{
 		Album:  mockAlbumDao,
 		Artist: mockArtistDao,
 	}
 
 	app := application.NewApp(dbClient, server)
-	assert.NotNil(app)
+	suite.NotNil(app)
 	defer app.Close()
 	app.Run()
 
 	body, err := json.Marshal(album)
-	assert.Nil(err)
+	suite.Nil(err)
 
 	buffer := bytes.NewBuffer(body)
 	resp, err := http.Post("http://localhost:8080/api/v1/album", "application/json", buffer)
-	assert.Nil(err)
-	assert.Equal(http.StatusInternalServerError, resp.StatusCode)
+	suite.Nil(err)
+	suite.Equal(http.StatusInternalServerError, resp.StatusCode)
 	defer resp.Body.Close()
 
 	retBody, err := ioutil.ReadAll(resp.Body)
-	assert.Nil(err)
-	assert.Equal("{\"error\":\"Something went bad with the artist\"}", string(retBody))
+	suite.Nil(err)
+	suite.Equal("{\"error\":\"Something went bad with the artist\"}", string(retBody))
 }
 
-func TestCreateAlbumError(t *testing.T) {
-	assert := assert.New(t)
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	cfg := config.Config{
-		ServerHost: "",
-		ServerPort: 8080,
-	}
+func (suite *AppSuite) TestCreateAlbumError() {
+	defer suite.ctrl.Finish()
 
 	album := model.Album{
 		Title: "Something Wicked This Way Comes",
@@ -376,50 +360,43 @@ func TestCreateAlbumError(t *testing.T) {
 		Rating:    0,
 	}
 
-	mockArtistDao := mock.NewMockArtistDao(ctrl)
+	mockArtistDao := mock.NewMockArtistDao(suite.ctrl)
 	mockArtistDao.EXPECT().Close().Times(1)
 
-	mockAlbumDao := mock.NewMockAlbumDao(ctrl)
+	mockAlbumDao := mock.NewMockAlbumDao(suite.ctrl)
 	mockAlbumDao.EXPECT().
 		Save(gomock.Eq(album)).
 		Return(int64(0), errors.New("Waffles")).
 		Times(1)
 	mockAlbumDao.EXPECT().Close().Times(1)
 
-	server := server.NewServer(cfg)
+	server := server.NewServer(suite.cfg)
 	dbClient := db.DatabaseClient{
 		Album:  mockAlbumDao,
 		Artist: mockArtistDao,
 	}
 
 	app := application.NewApp(dbClient, server)
-	assert.NotNil(app)
+	suite.NotNil(app)
 	defer app.Close()
 	app.Run()
 
 	body, err := json.Marshal(album)
-	assert.Nil(err)
+	suite.Nil(err)
 
 	buffer := bytes.NewBuffer(body)
 	resp, err := http.Post("http://localhost:8080/api/v1/album", "application/json", buffer)
-	assert.Nil(err)
-	assert.Equal(http.StatusInternalServerError, resp.StatusCode)
+	suite.Nil(err)
+	suite.Equal(http.StatusInternalServerError, resp.StatusCode)
 	defer resp.Body.Close()
 
 	retBody, err := ioutil.ReadAll(resp.Body)
-	assert.Nil(err)
-	assert.Equal("{\"error\":\"Waffles\"}", string(retBody))
+	suite.Nil(err)
+	suite.Equal("{\"error\":\"Waffles\"}", string(retBody))
 }
 
-func TestRetrieveAlbum(t *testing.T) {
-	assert := assert.New(t)
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	cfg := config.Config{
-		ServerHost: "",
-		ServerPort: 8080,
-	}
+func (suite *AppSuite) TestRetrieveAlbum() {
+	defer suite.ctrl.Finish()
 
 	album := model.Album{
 		Id:    123,
@@ -432,152 +409,124 @@ func TestRetrieveAlbum(t *testing.T) {
 		Rating:    0,
 	}
 
-	mockAlbumDao := mock.NewMockAlbumDao(ctrl)
+	mockAlbumDao := mock.NewMockAlbumDao(suite.ctrl)
 	mockAlbumDao.EXPECT().
 		Load(gomock.Eq(album.Id)).
 		Return(&album).
 		Times(1)
 	mockAlbumDao.EXPECT().Close().Times(1)
 
-	server := server.NewServer(cfg)
+	server := server.NewServer(suite.cfg)
 	dbClient := db.DatabaseClient{
 		Album: mockAlbumDao,
 	}
 
 	app := application.NewApp(dbClient, server)
-	assert.NotNil(app)
+	suite.NotNil(app)
 	defer app.Close()
 	app.Run()
 
 	resp, err := http.Get("http://localhost:8080/api/v1/album/123")
-	assert.Nil(err)
-	assert.Equal(http.StatusOK, resp.StatusCode)
+	suite.Nil(err)
+	suite.Equal(http.StatusOK, resp.StatusCode)
 	defer resp.Body.Close()
 
 	retAlbum := model.Album{}
 	retBody, err := ioutil.ReadAll(resp.Body)
-	assert.Nil(err)
-	assert.Nil(json.Unmarshal(retBody, &retAlbum))
-	assert.Equal(album, retAlbum)
+	suite.Nil(err)
+	suite.Nil(json.Unmarshal(retBody, &retAlbum))
+	suite.Equal(album, retAlbum)
 }
 
-func TestRetrieveAlbumNotFound(t *testing.T) {
-	assert := assert.New(t)
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *AppSuite) TestRetrieveAlbumNotFound() {
+	defer suite.ctrl.Finish()
 
-	cfg := config.Config{
-		ServerHost: "",
-		ServerPort: 8080,
-	}
-
-	mockAlbumDao := mock.NewMockAlbumDao(ctrl)
+	mockAlbumDao := mock.NewMockAlbumDao(suite.ctrl)
 	mockAlbumDao.EXPECT().
 		Load(gomock.Eq(int64(13))).
 		Return(nil).
 		Times(1)
 	mockAlbumDao.EXPECT().Close().Times(1)
 
-	server := server.NewServer(cfg)
+	server := server.NewServer(suite.cfg)
 	dbClient := db.DatabaseClient{
 		Album: mockAlbumDao,
 	}
 
 	app := application.NewApp(dbClient, server)
-	assert.NotNil(app)
+	suite.NotNil(app)
 	defer app.Close()
 	app.Run()
 
 	resp, err := http.Get("http://localhost:8080/api/v1/album/13")
-	assert.Nil(err)
-	assert.Equal(http.StatusNotFound, resp.StatusCode)
+	suite.Nil(err)
+	suite.Equal(http.StatusNotFound, resp.StatusCode)
 	defer resp.Body.Close()
 
 	retBody, err := ioutil.ReadAll(resp.Body)
-	assert.Nil(err)
-	assert.Equal("{\"error\":\"Album not found.\"}", string(retBody))
+	suite.Nil(err)
+	suite.Equal("{\"error\":\"Album not found.\"}", string(retBody))
 }
 
-func TestRetrieveAlbumInvalidId(t *testing.T) {
-	assert := assert.New(t)
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *AppSuite) TestRetrieveAlbumInvalidId() {
+	defer suite.ctrl.Finish()
 
-	cfg := config.Config{
-		ServerHost: "",
-		ServerPort: 8080,
-	}
-
-	mockAlbumDao := mock.NewMockAlbumDao(ctrl)
+	mockAlbumDao := mock.NewMockAlbumDao(suite.ctrl)
 	mockAlbumDao.EXPECT().Close().Times(1)
 
-	server := server.NewServer(cfg)
+	server := server.NewServer(suite.cfg)
 	dbClient := db.DatabaseClient{
 		Album: mockAlbumDao,
 	}
 
 	app := application.NewApp(dbClient, server)
-	assert.NotNil(app)
+	suite.NotNil(app)
 	defer app.Close()
 	app.Run()
 
 	resp, err := http.Get("http://localhost:8080/api/v1/album/cats")
-	assert.Nil(err)
-	assert.Equal(http.StatusBadRequest, resp.StatusCode)
+	suite.Nil(err)
+	suite.Equal(http.StatusBadRequest, resp.StatusCode)
 	defer resp.Body.Close()
 
 	retBody, err := ioutil.ReadAll(resp.Body)
-	assert.Nil(err)
-	assert.Equal("{\"error\":\"Invalid ID provided. Must be an integer.\"}", string(retBody))
+	suite.Nil(err)
+	suite.Equal("{\"error\":\"Invalid ID provided. Must be an integer.\"}", string(retBody))
 }
 
-func TestUpdateAlbumInvalidId(t *testing.T) {
-	assert := assert.New(t)
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *AppSuite) TestUpdateAlbumInvalidId() {
+	defer suite.ctrl.Finish()
 
-	cfg := config.Config{
-		ServerHost: "",
-		ServerPort: 8080,
-	}
-
-	mockAlbumDao := mock.NewMockAlbumDao(ctrl)
+	mockAlbumDao := mock.NewMockAlbumDao(suite.ctrl)
 	mockAlbumDao.EXPECT().Close().Times(1)
 
-	server := server.NewServer(cfg)
+	server := server.NewServer(suite.cfg)
 	dbClient := db.DatabaseClient{
 		Album: mockAlbumDao,
 	}
 
 	app := application.NewApp(dbClient, server)
-	assert.NotNil(app)
+	suite.NotNil(app)
 	defer app.Close()
 	app.Run()
 
 	req, err := http.NewRequest(http.MethodPut, "http://localhost:8080/api/v1/album/cats", nil)
-	assert.Nil(err)
+	suite.Nil(err)
 
 	httpClient := &http.Client{}
 
 	resp, err := httpClient.Do(req)
-	assert.Nil(err)
-	assert.Equal(http.StatusBadRequest, resp.StatusCode)
+	suite.Nil(err)
+	suite.Equal(http.StatusBadRequest, resp.StatusCode)
 	defer resp.Body.Close()
 
 	retBody, err := ioutil.ReadAll(resp.Body)
-	assert.Nil(err)
-	assert.Equal("{\"error\":\"Invalid ID provided. Must be an integer.\"}", string(retBody))
+	suite.Nil(err)
+	suite.Equal("{\"error\":\"Invalid ID provided. Must be an integer.\"}", string(retBody))
 }
 
-func TestUpdateAlbum(t *testing.T) {
-	assert := assert.New(t)
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	cfg := config.Config{
-		ServerHost: "",
-		ServerPort: 8080,
-	}
+func (suite *AppSuite) TestUpdateAlbum() {
+	defer suite.ctrl.Finish()
 
 	album := model.Album{
 		Id:    456,
@@ -590,166 +539,138 @@ func TestUpdateAlbum(t *testing.T) {
 		Rating:    0,
 	}
 
-	mockAlbumDao := mock.NewMockAlbumDao(ctrl)
+	mockAlbumDao := mock.NewMockAlbumDao(suite.ctrl)
 	mockAlbumDao.EXPECT().
 		Save(gomock.Eq(album)).
 		Return(int64(456), nil).
 		Times(1)
 	mockAlbumDao.EXPECT().Close().Times(1)
 
-	server := server.NewServer(cfg)
+	server := server.NewServer(suite.cfg)
 	dbClient := db.DatabaseClient{
 		Album: mockAlbumDao,
 	}
 
 	app := application.NewApp(dbClient, server)
-	assert.NotNil(app)
+	suite.NotNil(app)
 	defer app.Close()
 	app.Run()
 
 	body, err := json.Marshal(album)
-	assert.Nil(err)
+	suite.Nil(err)
 
 	buffer := bytes.NewBuffer(body)
 
 	req, err := http.NewRequest(http.MethodPut, "http://localhost:8080/api/v1/album/456", buffer)
-	assert.Nil(err)
+	suite.Nil(err)
 
 	httpClient := &http.Client{}
 
 	resp, err := httpClient.Do(req)
-	assert.Nil(err)
-	assert.Equal(http.StatusOK, resp.StatusCode)
+	suite.Nil(err)
+	suite.Equal(http.StatusOK, resp.StatusCode)
 	defer resp.Body.Close()
 }
 
-func TestRemoveAlbumInvalidId(t *testing.T) {
-	assert := assert.New(t)
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *AppSuite) TestRemoveAlbumInvalidId() {
+	defer suite.ctrl.Finish()
 
-	cfg := config.Config{
-		ServerHost: "",
-		ServerPort: 8080,
-	}
-
-	mockAlbumDao := mock.NewMockAlbumDao(ctrl)
+	mockAlbumDao := mock.NewMockAlbumDao(suite.ctrl)
 	mockAlbumDao.EXPECT().Close().Times(1)
 
-	server := server.NewServer(cfg)
+	server := server.NewServer(suite.cfg)
 	dbClient := db.DatabaseClient{
 		Album: mockAlbumDao,
 	}
 
 	app := application.NewApp(dbClient, server)
-	assert.NotNil(app)
+	suite.NotNil(app)
 	defer app.Close()
 	app.Run()
 
 	req, err := http.NewRequest(http.MethodDelete, "http://localhost:8080/api/v1/album/cats", nil)
-	assert.Nil(err)
+	suite.Nil(err)
 
 	httpClient := &http.Client{}
 
 	resp, err := httpClient.Do(req)
-	assert.Nil(err)
-	assert.Equal(http.StatusBadRequest, resp.StatusCode)
+	suite.Nil(err)
+	suite.Equal(http.StatusBadRequest, resp.StatusCode)
 	defer resp.Body.Close()
 
 	retBody, err := ioutil.ReadAll(resp.Body)
-	assert.Nil(err)
-	assert.Equal("{\"error\":\"Invalid ID provided. Must be an integer.\"}", string(retBody))
+	suite.Nil(err)
+	suite.Equal("{\"error\":\"Invalid ID provided. Must be an integer.\"}", string(retBody))
 }
 
-func TestRemoveAlbum(t *testing.T) {
-	assert := assert.New(t)
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *AppSuite) TestRemoveAlbum() {
+	defer suite.ctrl.Finish()
 
-	cfg := config.Config{
-		ServerHost: "",
-		ServerPort: 8080,
-	}
-
-	mockAlbumDao := mock.NewMockAlbumDao(ctrl)
+	mockAlbumDao := mock.NewMockAlbumDao(suite.ctrl)
 	mockAlbumDao.EXPECT().
 		Delete(gomock.Eq(model.Album{Id: 456})).
 		Return(int64(1), nil).
 		Times(1)
 	mockAlbumDao.EXPECT().Close().Times(1)
 
-	server := server.NewServer(cfg)
+	server := server.NewServer(suite.cfg)
 	dbClient := db.DatabaseClient{
 		Album: mockAlbumDao,
 	}
 
 	app := application.NewApp(dbClient, server)
-	assert.NotNil(app)
+	suite.NotNil(app)
 	defer app.Close()
 	app.Run()
 
 	req, err := http.NewRequest(http.MethodDelete, "http://localhost:8080/api/v1/album/456", nil)
-	assert.Nil(err)
+	suite.Nil(err)
 
 	httpClient := &http.Client{}
 
 	resp, err := httpClient.Do(req)
-	assert.Nil(err)
-	assert.Equal(http.StatusOK, resp.StatusCode)
+	suite.Nil(err)
+	suite.Equal(http.StatusOK, resp.StatusCode)
 	defer resp.Body.Close()
 }
 
-func TestRemoveAlbumError(t *testing.T) {
-	assert := assert.New(t)
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *AppSuite) TestRemoveAlbumError() {
+	defer suite.ctrl.Finish()
 
-	cfg := config.Config{
-		ServerHost: "",
-		ServerPort: 8080,
-	}
-
-	mockAlbumDao := mock.NewMockAlbumDao(ctrl)
+	mockAlbumDao := mock.NewMockAlbumDao(suite.ctrl)
 	mockAlbumDao.EXPECT().
 		Delete(gomock.Eq(model.Album{Id: 456})).
 		Return(int64(0), errors.New("Unable to delete album")).
 		Times(1)
 	mockAlbumDao.EXPECT().Close().Times(1)
 
-	server := server.NewServer(cfg)
+	server := server.NewServer(suite.cfg)
 	dbClient := db.DatabaseClient{
 		Album: mockAlbumDao,
 	}
 
 	app := application.NewApp(dbClient, server)
-	assert.NotNil(app)
+	suite.NotNil(app)
 	defer app.Close()
 	app.Run()
 
 	req, err := http.NewRequest(http.MethodDelete, "http://localhost:8080/api/v1/album/456", nil)
-	assert.Nil(err)
+	suite.Nil(err)
 
 	httpClient := &http.Client{}
 
 	resp, err := httpClient.Do(req)
-	assert.Nil(err)
-	assert.Equal(http.StatusInternalServerError, resp.StatusCode)
+	suite.Nil(err)
+	suite.Equal(http.StatusInternalServerError, resp.StatusCode)
 	defer resp.Body.Close()
 
 	retBody, err := ioutil.ReadAll(resp.Body)
-	assert.Nil(err)
-	assert.Equal("{\"error\":\"Unable to delete album\"}", string(retBody))
+	suite.Nil(err)
+	suite.Equal("{\"error\":\"Unable to delete album\"}", string(retBody))
 }
 
-func TestGetArtists(t *testing.T) {
-	assert := assert.New(t)
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	cfg := config.Config{
-		ServerHost: "",
-		ServerPort: 8080,
-	}
+func (suite *AppSuite) TestGetArtists() {
+	defer suite.ctrl.Finish()
 
 	artists := []model.Artist{
 		{Id: 1, Name: "James"},
@@ -757,212 +678,177 @@ func TestGetArtists(t *testing.T) {
 		{Id: 3, Name: "Jayne"},
 	}
 
-	mockArtistDao := mock.NewMockArtistDao(ctrl)
+	mockArtistDao := mock.NewMockArtistDao(suite.ctrl)
 	mockArtistDao.EXPECT().
 		LoadAll().
 		Return(artists).
 		Times(1)
 	mockArtistDao.EXPECT().Close().Times(1)
 
-	server := server.NewServer(cfg)
+	server := server.NewServer(suite.cfg)
 	dbClient := db.DatabaseClient{
 		Artist: mockArtistDao,
 	}
 
 	app := application.NewApp(dbClient, server)
-	assert.NotNil(app)
+	suite.NotNil(app)
 	defer app.Close()
 	app.Run()
 
 	resp, err := http.Get("http://localhost:8080/api/v1/artist")
-	assert.Nil(err)
-	assert.Equal(http.StatusOK, resp.StatusCode)
+	suite.Nil(err)
+	suite.Equal(http.StatusOK, resp.StatusCode)
 	defer resp.Body.Close()
 
 	retArtists := []model.Artist{}
 	retBody, err := ioutil.ReadAll(resp.Body)
-	assert.Nil(err)
-	assert.Nil(json.Unmarshal(retBody, &retArtists))
-	assert.Equal(artists, retArtists)
+	suite.Nil(err)
+	suite.Nil(json.Unmarshal(retBody, &retArtists))
+	suite.Equal(artists, retArtists)
 }
 
-func TestCreateArtist(t *testing.T) {
-	assert := assert.New(t)
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	cfg := config.Config{
-		ServerHost: "",
-		ServerPort: 8080,
-	}
+func (suite *AppSuite) TestCreateArtist() {
+	defer suite.ctrl.Finish()
 
 	artist := model.Artist{
 		Name: "James",
 	}
 
-	mockArtistDao := mock.NewMockArtistDao(ctrl)
+	mockArtistDao := mock.NewMockArtistDao(suite.ctrl)
 	mockArtistDao.EXPECT().
 		Save(gomock.Eq(artist)).
 		Return(int64(1), nil).
 		Times(1)
 	mockArtistDao.EXPECT().Close().Times(1)
 
-	server := server.NewServer(cfg)
+	server := server.NewServer(suite.cfg)
 	dbClient := db.DatabaseClient{
 		Artist: mockArtistDao,
 	}
 
 	app := application.NewApp(dbClient, server)
-	assert.NotNil(app)
+	suite.NotNil(app)
 	defer app.Close()
 	app.Run()
 
 	body, err := json.Marshal(artist)
-	assert.Nil(err)
+	suite.Nil(err)
 
 	buffer := bytes.NewBuffer(body)
 	resp, err := http.Post("http://localhost:8080/api/v1/artist", "application/json", buffer)
-	assert.Nil(err)
+	suite.Nil(err)
 	defer resp.Body.Close()
 
 	artist.Id = 1
 	body, err = json.Marshal(artist)
-	assert.Nil(err)
+	suite.Nil(err)
 
 	retBody, err := ioutil.ReadAll(resp.Body)
-	assert.Nil(err)
-	assert.Equal(string(body), string(retBody))
+	suite.Nil(err)
+	suite.Equal(string(body), string(retBody))
 }
 
-func TestCreateArtistEmptyName(t *testing.T) {
-	assert := assert.New(t)
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	cfg := config.Config{
-		ServerHost: "",
-		ServerPort: 8080,
-	}
+func (suite *AppSuite) TestCreateArtistEmptyName() {
+	defer suite.ctrl.Finish()
 
 	artist := model.Artist{}
 
-	mockArtistDao := mock.NewMockArtistDao(ctrl)
+	mockArtistDao := mock.NewMockArtistDao(suite.ctrl)
 	mockArtistDao.EXPECT().Close().Times(1)
 
-	server := server.NewServer(cfg)
+	server := server.NewServer(suite.cfg)
 	dbClient := db.DatabaseClient{
 		Artist: mockArtistDao,
 	}
 
 	app := application.NewApp(dbClient, server)
-	assert.NotNil(app)
+	suite.NotNil(app)
 	defer app.Close()
 	app.Run()
 
 	body, err := json.Marshal(artist)
-	assert.Nil(err)
+	suite.Nil(err)
 
 	buffer := bytes.NewBuffer(body)
 	resp, err := http.Post("http://localhost:8080/api/v1/artist", "application/json", buffer)
-	assert.Nil(err)
+	suite.Nil(err)
 	defer resp.Body.Close()
 
 	retBody, err := ioutil.ReadAll(resp.Body)
-	assert.Nil(err)
-	assert.Equal("{\"error\":\"Artists must be named.\"}", string(retBody))
+	suite.Nil(err)
+	suite.Equal("{\"error\":\"Artists must be named.\"}", string(retBody))
 }
 
-func TestCreateArtistError(t *testing.T) {
-	assert := assert.New(t)
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	cfg := config.Config{
-		ServerHost: "",
-		ServerPort: 8080,
-	}
+func (suite *AppSuite) TestCreateArtistError() {
+	defer suite.ctrl.Finish()
 
 	artist := model.Artist{
 		Name: "James",
 	}
 
-	mockArtistDao := mock.NewMockArtistDao(ctrl)
+	mockArtistDao := mock.NewMockArtistDao(suite.ctrl)
 	mockArtistDao.EXPECT().
 		Save(gomock.Eq(artist)).
 		Return(int64(0), errors.New("Wat")).
 		Times(1)
 	mockArtistDao.EXPECT().Close().Times(1)
 
-	server := server.NewServer(cfg)
+	server := server.NewServer(suite.cfg)
 	dbClient := db.DatabaseClient{
 		Artist: mockArtistDao,
 	}
 
 	app := application.NewApp(dbClient, server)
-	assert.NotNil(app)
+	suite.NotNil(app)
 	defer app.Close()
 	app.Run()
 
 	body, err := json.Marshal(artist)
-	assert.Nil(err)
+	suite.Nil(err)
 
 	buffer := bytes.NewBuffer(body)
 	resp, err := http.Post("http://localhost:8080/api/v1/artist", "application/json", buffer)
-	assert.Nil(err)
+	suite.Nil(err)
 	defer resp.Body.Close()
 
 	retBody, err := ioutil.ReadAll(resp.Body)
-	assert.Nil(err)
-	assert.Equal("{\"error\":\"Wat\"}", string(retBody))
+	suite.Nil(err)
+	suite.Equal("{\"error\":\"Wat\"}", string(retBody))
 }
 
-func TestUpdateTrackInvalidId(t *testing.T) {
-	assert := assert.New(t)
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *AppSuite) TestUpdateTrackInvalidId() {
+	defer suite.ctrl.Finish()
 
-	cfg := config.Config{
-		ServerHost: "",
-		ServerPort: 8080,
-	}
-
-	mockTrackDao := mock.NewMockTrackDao(ctrl)
+	mockTrackDao := mock.NewMockTrackDao(suite.ctrl)
 	mockTrackDao.EXPECT().Close().Times(1)
 
-	server := server.NewServer(cfg)
+	server := server.NewServer(suite.cfg)
 	dbClient := db.DatabaseClient{
 		Track: mockTrackDao,
 	}
 
 	app := application.NewApp(dbClient, server)
-	assert.NotNil(app)
+	suite.NotNil(app)
 	defer app.Close()
 	app.Run()
 
 	req, err := http.NewRequest(http.MethodPut, "http://localhost:8080/api/v1/track/cats", nil)
-	assert.Nil(err)
+	suite.Nil(err)
 
 	httpClient := &http.Client{}
 
 	resp, err := httpClient.Do(req)
-	assert.Nil(err)
-	assert.Equal(http.StatusBadRequest, resp.StatusCode)
+	suite.Nil(err)
+	suite.Equal(http.StatusBadRequest, resp.StatusCode)
 	defer resp.Body.Close()
 
 	retBody, err := ioutil.ReadAll(resp.Body)
-	assert.Nil(err)
-	assert.Equal("{\"error\":\"Invalid ID provided. Must be an integer.\"}", string(retBody))
+	suite.Nil(err)
+	suite.Equal("{\"error\":\"Invalid ID provided. Must be an integer.\"}", string(retBody))
 }
 
-func TestUpdateTrack(t *testing.T) {
-	assert := assert.New(t)
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	cfg := config.Config{
-		ServerHost: "",
-		ServerPort: 8080,
-	}
+func (suite *AppSuite) TestUpdateTrack() {
+	defer suite.ctrl.Finish()
 
 	track := model.Track{
 		Id:     456,
@@ -970,48 +856,41 @@ func TestUpdateTrack(t *testing.T) {
 		Rating: 0,
 	}
 
-	mockTrackDao := mock.NewMockTrackDao(ctrl)
+	mockTrackDao := mock.NewMockTrackDao(suite.ctrl)
 	mockTrackDao.EXPECT().
 		Save(gomock.Eq(track)).
 		Return(int64(456), nil).
 		Times(1)
 	mockTrackDao.EXPECT().Close().Times(1)
 
-	server := server.NewServer(cfg)
+	server := server.NewServer(suite.cfg)
 	dbClient := db.DatabaseClient{
 		Track: mockTrackDao,
 	}
 
 	app := application.NewApp(dbClient, server)
-	assert.NotNil(app)
+	suite.NotNil(app)
 	defer app.Close()
 	app.Run()
 
 	body, err := json.Marshal(track)
-	assert.Nil(err)
+	suite.Nil(err)
 
 	buffer := bytes.NewBuffer(body)
 
 	req, err := http.NewRequest(http.MethodPut, "http://localhost:8080/api/v1/track/456", buffer)
-	assert.Nil(err)
+	suite.Nil(err)
 
 	httpClient := &http.Client{}
 
 	resp, err := httpClient.Do(req)
-	assert.Nil(err)
-	assert.Equal(http.StatusOK, resp.StatusCode)
+	suite.Nil(err)
+	suite.Equal(http.StatusOK, resp.StatusCode)
 	defer resp.Body.Close()
 }
 
-func TestUpdateTrackError(t *testing.T) {
-	assert := assert.New(t)
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	cfg := config.Config{
-		ServerHost: "",
-		ServerPort: 8080,
-	}
+func (suite *AppSuite) TestUpdateTrackError() {
+	defer suite.ctrl.Finish()
 
 	track := model.Track{
 		Id:     456,
@@ -1019,95 +898,88 @@ func TestUpdateTrackError(t *testing.T) {
 		Rating: 0,
 	}
 
-	mockTrackDao := mock.NewMockTrackDao(ctrl)
+	mockTrackDao := mock.NewMockTrackDao(suite.ctrl)
 	mockTrackDao.EXPECT().
 		Save(gomock.Eq(track)).
 		Return(int64(0), errors.New("Bad day")).
 		Times(1)
 	mockTrackDao.EXPECT().Close().Times(1)
 
-	server := server.NewServer(cfg)
+	server := server.NewServer(suite.cfg)
 	dbClient := db.DatabaseClient{
 		Track: mockTrackDao,
 	}
 
 	app := application.NewApp(dbClient, server)
-	assert.NotNil(app)
+	suite.NotNil(app)
 	defer app.Close()
 	app.Run()
 
 	body, err := json.Marshal(track)
-	assert.Nil(err)
+	suite.Nil(err)
 
 	buffer := bytes.NewBuffer(body)
 
 	req, err := http.NewRequest(http.MethodPut, "http://localhost:8080/api/v1/track/456", buffer)
-	assert.Nil(err)
+	suite.Nil(err)
 
 	httpClient := &http.Client{}
 
 	resp, err := httpClient.Do(req)
-	assert.Nil(err)
-	assert.Equal(http.StatusInternalServerError, resp.StatusCode)
+	suite.Nil(err)
+	suite.Equal(http.StatusInternalServerError, resp.StatusCode)
 	defer resp.Body.Close()
 
 	retBody, err := ioutil.ReadAll(resp.Body)
-	assert.Nil(err)
-	assert.Equal("{\"error\":\"Bad day\"}", string(retBody))
+	suite.Nil(err)
+	suite.Equal("{\"error\":\"Bad day\"}", string(retBody))
 }
 
-func TestCreateTrack(t *testing.T) {
-	assert := assert.New(t)
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	cfg := config.Config{
-		ServerHost: "",
-		ServerPort: 8080,
-	}
+func (suite *AppSuite) TestCreateTrack() {
+	defer suite.ctrl.Finish()
 
 	track := model.Track{
 		Title:  "Something Wicked This Way Comes",
 		Rating: 0,
 	}
 
-	mockTrackDao := mock.NewMockTrackDao(ctrl)
+	mockTrackDao := mock.NewMockTrackDao(suite.ctrl)
 	mockTrackDao.EXPECT().
 		Save(gomock.Eq(track)).
 		Return(int64(111), nil).
 		Times(1)
 	mockTrackDao.EXPECT().Close().Times(1)
 
-	server := server.NewServer(cfg)
+	server := server.NewServer(suite.cfg)
 	dbClient := db.DatabaseClient{
 		Track: mockTrackDao,
 	}
 
 	app := application.NewApp(dbClient, server)
-	assert.NotNil(app)
+	suite.NotNil(app)
 	defer app.Close()
 	app.Run()
 
 	body, err := json.Marshal(track)
-	assert.Nil(err)
+	suite.Nil(err)
 
 	buffer := bytes.NewBuffer(body)
 
 	req, err := http.NewRequest(http.MethodPost, "http://localhost:8080/api/v1/track", buffer)
-	assert.Nil(err)
+	suite.Nil(err)
 
 	httpClient := &http.Client{}
 
 	resp, err := httpClient.Do(req)
-	assert.Nil(err)
-	assert.Equal(http.StatusCreated, resp.StatusCode)
+	suite.Nil(err)
+	suite.Equal(http.StatusCreated, resp.StatusCode)
 	defer resp.Body.Close()
 
 	track.Id = 111
 	body, err = json.Marshal(track)
-	assert.Nil(err)
+	suite.Nil(err)
 
 	retBody, err := ioutil.ReadAll(resp.Body)
-	assert.Nil(err)
-	assert.Equal(string(body), string(retBody))
+	suite.Nil(err)
+	suite.Equal(string(body), string(retBody))
 }
