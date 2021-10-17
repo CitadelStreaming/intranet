@@ -136,7 +136,7 @@ export class AlbumEditController
                 return;
             }
 
-            container.parentNode.removeChild(container);
+            that._closeAllModals();
         });
 
         let body = document.createElement("div");

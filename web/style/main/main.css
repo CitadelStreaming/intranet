@@ -115,7 +115,7 @@ input:invalid {
 
 .modal > div {
     width: 1000px;
-    min-height: 300px;
+    min-height: 100px;
     border-radius: 5px;
     background: #666;
     padding: 10px;
