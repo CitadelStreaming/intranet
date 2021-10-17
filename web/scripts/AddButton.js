@@ -1,3 +1,5 @@
+import {AlbumEditController} from "./AlbumEditController.js";
+
 export class AddButton
 {
     constructor()
@@ -12,6 +14,9 @@ export class AddButton
 
     _addAlbumModal(e)
     {
-        console.log(e);
+        let controller = new AlbumEditController({
+            artist: {},
+            tracks: []
+        });
     }
 }

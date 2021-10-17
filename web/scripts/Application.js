@@ -1,11 +1,11 @@
 import {AddButton} from "./AddButton.js";
-import {AlbumController} from "./AlbumController.js";
+import {AlbumListController} from "./AlbumListController.js";
 
 export class Application
 {
     constructor(bodySelector)
     {
-        this._albums = new AlbumController(bodySelector);
+        this._albums = new AlbumListController(bodySelector);
         this._addButton = new AddButton();
     }
 }

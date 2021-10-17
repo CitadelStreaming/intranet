@@ -1,4 +1,4 @@
-export class AlbumController
+export class AlbumListController
 {
     constructor(selector)
     {
