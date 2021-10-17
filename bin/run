@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+
+source ./bin/utils.sh
+
+mariadbContainer=$(./bin/oci-exec ps | grep citadel_db | awk '{print $1}' || echo "")
+if [[ -n "${mariadbContainer}" ]]; then
+    log "Database container already running: ${mariadbContainer}"
+else
+    mariadbContainer=$(./bin/oci-exec run \
+        --detach \
+        -p 3306:3306 \
+        --net=host \
+        --rm \
+        --name=citadel_db \
+        --env=MYSQL_ROOT_PASSWORD=pass \
+        mariadb:latest
+    )
+
+    [[ -n "${mariadbContainer}" ]] || die "Unable to stand up database container"
+
+    log "Successfully stood up database container: ${mariadbContainer}"
+
+    for i in {0..10}; do
+        mysql --user=root --password=pass --port=3306 --host=127.0.0.1 -e "CREATE DATABASE IF NOT EXISTS citadel_db" || sleep 1 && continue
+        break
+    done
+
+fi
+
+log "Checking for web container"
+webContainer=$(./bin/oci-exec ps | grep citadel_server | awk '{print $1}' || echo "")
+log "Found: '${webContainer}'"
+if [[ -n "${webContainer}" ]]; then
+    log "Found webserver container: ${webContainer} tearing it down and restarting."
+    ./bin/oci-exec kill "${webContainer}"
+fi
+
+log "Starting web container"
+webContainer=$(./bin/oci-exec run \
+    -p 8080:8080 \
+    --rm \
+    --name=citadel_server \
+    --net=host \
+    --env=DB_PORT=3306 \
+    --env=DB_USER=root \
+    --env=DB_PASS=pass \
+    --env=DB_NAME=citadel_db \
+    --env=SERVER_PATH=/var/www/ \
+    --env=MIGRATIONS=/var/migrations \
+    citadel-intranet:latest
+)
+log "Web container is now running"
+
+[[ -n "${webContainer}" ]] || die "Unable to stand up webserver container"
+
+echo "Successfully stood up webserver container: ${webContainer}"
