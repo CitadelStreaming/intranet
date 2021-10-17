@@ -141,7 +141,6 @@ input:invalid {
 .track {
     background: #777;
     padding: 3px;
-    cursor: pointer;
     transition: all 100ms;
 }
 
