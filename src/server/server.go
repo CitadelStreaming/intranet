@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
@@ -33,7 +34,7 @@ func NewServer(cfg config.Config) Server {
 }
 
 func (this Server) Close() {
-	this.server.Close()
+	this.server.Shutdown(context.Background())
 }
 
 func getAddressString(cfg config.Config) string {

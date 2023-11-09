@@ -15,7 +15,7 @@ func main() {
 	cfg := config.LoadConfig()
 	dbClient := db.NewDatabaseClient(cfg)
 
-	dbClient.Migrate(cfg.MigrationsPath)
+	db.Migrate(dbClient.Db, cfg.MigrationsPath)
 
 	webServer := server.NewServer(cfg)
 	app := application.NewApp(dbClient, webServer)

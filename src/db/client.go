@@ -13,7 +13,7 @@ import (
 )
 
 type DatabaseClient struct {
-	db     *sql.DB
+	Db     *sql.DB
 	Artist dao.ArtistDao
 	Album  dao.AlbumDao
 	Track  dao.TrackDao
@@ -21,12 +21,12 @@ type DatabaseClient struct {
 
 func NewDatabaseClientFromConnection(db *sql.DB) DatabaseClient {
 	client := DatabaseClient{
-		db:     db,
+		Db:     db,
 		Artist: mysql.NewArtistDao(db),
 		Album:  nil,
 		Track:  mysql.NewTrackDao(db),
 	}
-	client.Album = mysql.NewAlbumDao(client.db, client.Artist, client.Track)
+	client.Album = mysql.NewAlbumDao(client.Db, client.Artist, client.Track)
 
 	return client
 }
@@ -38,10 +38,6 @@ func NewDatabaseClient(cfg config.Config) DatabaseClient {
 	}
 
 	return NewDatabaseClientFromConnection(db)
-}
-
-func (this DatabaseClient) Migrate(migrationsPath string) {
-	migrate(this.db, migrationsPath)
 }
 
 func (this DatabaseClient) Close() {
@@ -57,8 +53,8 @@ func (this DatabaseClient) Close() {
 		this.Track.Close()
 	}
 
-	if this.db != nil {
-		this.db.Close()
+	if this.Db != nil {
+		this.Db.Close()
 	}
 }
 

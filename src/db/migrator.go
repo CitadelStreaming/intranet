@@ -12,7 +12,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func migrate(db *sql.DB, migrationsPath string) {
+func Migrate(db *sql.DB, migrationsPath string) {
 	ensureMigrationsTableExists(db)
 
 	items, err := os.ReadDir(migrationsPath)
